@@ -1,0 +1,448 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=40G
+#SBATCH --job-name=validation    ### Job Name
+#SBATCH --time=520:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1           ### Number of CPU
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+
+
+dir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+ref="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.softmasked.fasta"
+ann="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3"
+
+
+#cd Cbren_prot_split/DONE/
+
+#for i in *.fasta.interpro.tsv;do
+#   cat $i >> Cbren_bad.names.inter.COMBO.tsv;
+#done
+
+
+
+
+
+repeats="$dir/VALIDATION/Cbren_remove_these_genes_0.75_overlap_with_repeats.txt"
+
+
+#while read -r line;
+#do
+#      grep -P "$line\t" Cbren_bad.names.inter.COMBO.tsv >> Cbren_bad.names.repeats.domains.tsv;
+#   done < $repeats
+
+
+
+#cd /projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION/blastp_val
+
+#while read -r line;
+#do
+#      grep -P "$line\t" Cbren_BAD_NAMES_longest_prot_balstp_comboprot.out >> Cbren_bad.names.repeats.blastmatches.tsv;
+#   done < $repeats
+
+
+
+
+#module load easybuild  GCC/6.3.0-2.27  OpenMPI/2.0.2 RepeatMasker/4.0.7 RepeatModeler/1.0.11
+#export PERL5LIB=/projects/ebb/software/MPI/GCC/6.3.0-2.27/OpenMPI/2.0.2/Perl/5.24.1/lib/perl5/
+#module load bedtools
+
+#while read -r line;
+#do
+#      grep -P "ID=$line;Parent" $ann >> Cbren_bad.names.few_genes_over_repeats.gff;
+#
+#  done < $repeats
+
+  #bedtools get fasta
+  #
+
+
+
+  ref="$dir/VALIDATION/Cbren_soft_masked_IVrev.fasta"
+
+
+
+  #perl -pe 's/(.*)mRNA\t(.*)ID=(.*);Parent=(.*)/\1\3\t\2ID=\3;Parent=\4/g' Cbren_bad.names.few_genes_over_repeats.gff > Cbren_bad.names.few_genes_over_repeats.fix.gff
+
+
+
+  #bedtools getfasta -name -s -fi $ref -bed Cbren_bad.names.few_genes_over_repeats.fix.gff -fo Cbren_genes_over_repeats.fasta
+
+  #mkdir -p classification_repeats
+  #cd classification_repeats
+  ###quite long step
+  #RepeatClassifier -consensi ../Cbren_genes_over_repeats.fasta -engine ncbi
+
+
+
+#grep -vP "Unk|Simple" Cbren_genes_over_repeats.fasta.classified | grep ">" - | sed -E "s/>//g" - > Cbren_genes_to_remove_over_repeats.txt
+#grep -P "Unk|Simple" Cbren_genes_over_repeats.fasta.classified | sed -E "s/>//g" - > Cbren_genes_regions_to_unmask.txt
+#sed -i "s/#.*//g" Cbren_genes_to_remove_over_repeats.txt
+#sed -i "s/#.*//g" Cbren_genes_regions_to_unmask.txt
+
+
+
+ref="$dir/VALIDATION/Cbren_soft_masked_IVrev.fasta"
+
+
+
+#perl -pe 's/(.*)mRNA\t(.*)ID=(.*);Parent=(.*)/\1\3\t\2ID=\3;Parent=\4/g' Cbren_bad.names.few_genes_over_repeats.gff > bren_bad.names.few_genes_over_repeats.fix.gff
+
+
+#bedtools getfasta -name -s -fi $ref -bed Cbren_bad.names.few_genes_over_repeats.fix.gff -fo Cbren_genes_over_repeats.fasta
+
+#mkdir -p classification_repeats
+#cd classification_repeats
+###quite long step
+#RepeatClassifier -consensi ../Cbren_genes_over_repeats.fasta -engine ncbi
+
+
+
+
+
+
+#/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3
+
+#cd Cb*prot*/DONE
+#cut -f1 *CO* |uniq >../../Transcripts_with_interpro.txt
+
+
+#cd blast*
+#cut -f1 Cbren_BAD_NAMES_longest_prot_balstp_comboprot.out |uniq > ../Transcripts_with_blastp.txt
+
+#cd VALIDATION/Cbren_1pass_val2
+#awk '{if($2>0) print$1;}' ReadsPerGene.out.tab |grep -v "N_" - > ../Genes_with_rnaseq.tx
+
+#annl="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3"
+
+#while read -r line;
+#do
+#   grep -P ";Parent=$line;" $annl |grep -o -P "ID=.*;Parent" - |sed -E "s/ID=//g" - |sed -E "s/;Parent//g" - >> Transcripts_with_rnaseq.txt ;
+
+#done < Genes_with_rnaseq.txt
+
+
+
+
+
+#ok, now get all transcipt names and turn them to genes
+
+#remove some genes that overlap classified repeats
+#grep -vP "Unk|Simple" Cbren_genes_over_repeats.fasta.classified | grep ">" - | sed -E "s/>//g" - > Cbren_genes_to_remove_over_repeats.txt
+##file with the list is Cbren_genes_to_remove_over_repeats.txt
+## now need to get gene names, and them uniq gene names to use the agat's kill list
+
+
+#while read -r line;
+#do
+#   grep -P "ID=$line;" $ann |grep -o -P ";Parent=.*;N" - |sed -E "s/;N//g" - |sed -E "s/;Parent=//g" - >> Genes_class_as_repeats_kill_list.TMP.txt ;
+
+#done < Cbren_genes_to_remove_over_repeats.txt
+
+#cat Genes_class_as_repeats_kill_list.TMP.txt |sort |uniq > Genes_class_as_repeats_kill_list.txt
+
+#rm Genes_class_as_repeats_kill_list.TMP.txt
+
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+##filter genes that classified as repeats
+#agat_sp_filter_feature_from_kill_list.pl \
+#    --gff $ann \
+#    --kill_list Genes_class_as_repeats_kill_list.txt \
+#    --output ${ann/gff3/filt58genes.gff3}
+
+
+
+
+#rename transcripts with names
+
+
+#cd /projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION/Cbren_prot_split/DONE
+
+#cp Cbren_bad.names.inter.COMBO.tsv Cbren_gene.names.inter.COMBO.tsv
+#cut -f1 Cbren_bad.names.inter.COMBO.tsv |sort |uniq > Cbren_interpro_transcrip_names.txt
+
+
+#while read -r line;
+#do
+
+#   transc="${line%%$'\t'*}"
+#   gene=$(grep -P "ID=$transc;" $ann |grep -o -P ";Parent=.*;N" - |sed -E "s/;N//g" - |sed -E "s/;Parent=//g" - )
+#   sed -i "s/$transc\t/$gene\t/g" Cbren_gene.names.inter.COMBO.tsv
+
+
+
+
+#   echo $gene >> Cbren_interpro_gene_names.txt
+
+#done < Cbren_interpro_transcrip_names.txt
+
+## add functionaala annotation with agat
+
+
+cd /projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION
+
+
+
+# Define a function to convert transcript IDs to gene names
+#convert_transcript_to_gene() {
+#    local input_file="$1"
+#    local output_file="$2"
+#    local annot="$ann"  # Replace with the path to your annotation file
+
+#    # Create a unique temporary file
+#    local temp_file=$(mktemp)
+
+#    while IFS=$'\t' read -r line; do
+        #transc="${line%%$'\t'*}"
+#        gene=$(grep -P "ID=$line;" "$annot" | grep -o -P ";Parent=.*;N" - | sed -E "s/;N//g" - | sed -E "s/;Parent=//g")
+#        echo "$gene" >> "$temp_file"
+#    done < "$input_file"
+
+#    # Sort and remove duplicates
+#    sort "$temp_file" | uniq > "$output_file"
+
+#    # Clean up the temporary file
+#    rm "$temp_file"
+#}
+
+# Usage: Convert transcript IDs to gene names
+#convert_transcript_to_gene "Transcripts_with_interpro.txt" "Genes_with_interpro.txt"
+#convert_transcript_to_gene "Transcripts_with_blastp.txt" "Genes_with_blastp.txt"
+#convert_transcript_to_gene "Transcripts_with_rnaseq.txt" "Genes_with_rnaseq.txt"
+
+
+
+# Define the input files and annotation file
+#genes_with_interpro="Genes_with_interpro.txt"
+#genes_with_rnaseq="Genes_with_rnaseq.txt"
+#genes_with_blastp="Genes_with_blastp.txt"
+
+annotation_file="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.gff3"  # the annotation file
+#output_annotation_file="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence2.gff3"  # the output path
+
+
+
+
+# Extract the list of genes from Genes_with_interpro.txt, Genes_with_rnaseq.txt, and Genes_with_blastp.txt
+#mapfile -t genes_interpro < "$genes_with_interpro"
+#mapfile -t genes_rnaseq < "$genes_with_rnaseq"
+#mapfile -t genes_blastp < "$genes_with_blastp"
+
+# Initialize an associative array to store gene annotations
+#declare -A gene_annotations
+
+#rm $output_annotation_file
+#rm GENE_evidenece_table.txt
+#touch GENE_evidenece_table.txt
+# Loop through the annotation file and build cumulative annotations
+#while IFS=$'\t' read -r line; do
+#    if [[ $line =~ $'\tgene\t' ]]; then
+#       gene=$(grep -m1 -o -P "ID=.*?;" <<< "$line" | sed -E "s/ID=|;//g")
+#       echo $gene
+#        annotation="inference=ab initio prediction"
+
+#        if [[ " ${genes_blastp[*]} " =~ " $gene " ]]; then
+#            annotation+=",similar to AA sequence"
+#        fi
+
+#        if [[ " ${genes_interpro[*]} " =~ " $gene " ]]; then
+#               annotation+=",protein motif"
+#       fi
+
+#       if [[ " ${genes_rnaseq[*]} " =~ " $gene " ]]; then
+#                       annotation+=";experiment=EXISTENCE:RNA-seq"
+#        fi
+
+#       echo "${line};$annotation" >> "$output_annotation_file"
+#       echo "${gene}\t$annotation" >> GENE_evidenece_table.txt
+
+#    else
+        # Lines that are not genes
+#        echo "$line" >> "$output_annotation_file"
+#    fi
+#done < "$annotation_file"
+
+
+
+
+#####################################################
+
+
+#ok now combine file with evidence with mt annotation
+#cp Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence2.gff3 Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence.MT.gff3
+
+#grep "EMBL" /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/mtDNA/HiFi/final_mitogenome.COPY.GFF.gff | sed -E "s/note=.*;gene/gene/g" - | sed -E "s/translation=.*;gene/gene/g" - >> Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence.MT.gff3
+#sed -i '8i\##sequence-region MtDNA 1 14613' Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence.MT.gff3
+#grep -P "\tPfam|\tCDD|\tTIGRFAM" /projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION/Cbren_prot_split/DONE/Cbren_bad.names.inter.COMBO.tsv |cut -f1-14 - > /projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION/Cbren_prot_split/DONE/Cbren_bad.names.inter.COMBO_filtered.tsv
+
+#filter only db that are supported by ENA/NCBI (Pfam,CDD,TIGRFAM, GO, and Interpro)
+agat_sp_manage_functional_annotation.pl -f $annotation_file  -i /projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION/Cbren_prot_split/DONE/Cbren_bad.names.inter.COMBO_filtered.tsv --output $dir/PASA/Cbren_annotation_with_interpro_mt_NO_EVIDENCE_filtdb
+
+
+
+#ok, now I need to sddd evidence to gene and mRNA and functional to gene and mRNA
+
+grep -P "\tmRNA" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.gff3 |cut -f9 | sed -e "s/ID=//g" -e "s/;Parent=/\t/g" -e "s/;Name=.*//g" - > mrna_to_gene.txt
+awk -F'\t' 'BEGIN {OFS="\t"} NR==FNR {gene[$2] = $1; next} $1 in gene {print gene[$1], $1, $2}' mrna_to_gene.txt GENE_evidenece_table.txt > mRNA_gene_evidence.txt
+grep "Dbxref" *gff3 | cut -f9 | sed -e "s/ID=//g" -e "s/;Parent=/\t/g" -e "s/;Dbxref=/\tdb_xref=/g" - > mRNAone_gene_func.txt
+awk -F'\t' 'BEGIN {OFS="\t"} {gene_to_func[$2] = $3} END {for (gene in gene_to_func) print gene, gene_to_func[gene]}' mRNAone_gene_func.txt > gene_to_func_mapping.txt
+awk -F'\t' 'BEGIN {OFS="\t"} NR==FNR {gene_to_func[$1] = $2; next} $2 in gene_to_func {print $1, $2, gene_to_func[$2]}' gene_to_func_mapping.txt ../mrna_to_gene.txt > mRNA_gene_func.txt
+
+
+
+
+
+
+#####################################################################
+
+
+
+
+
+annotation_evidence_func="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.gff3"
+func="/projects/phillipslab/ateterina/Cbren/final_annotation/PASA/Cbren_annotation_with_interpro_mt_NO_EVIDENCE_filtdb/mRNA_gene_func.txt"
+evid="/projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION/mRNA_gene_evidence.txt"
+
+
+declare -A gene_function
+declare -A mRNA_function
+declare -A gene_evid
+declare -A mRNA_evid
+
+
+while IFS=$'\t' read -r mRNA_id gene_id function; do
+       gene_function["$gene_id"]=$function
+       mRNA_function["$mRNA_id"]=$function
+done < "$func"
+
+
+
+while IFS=$'\t' read -r mRNA_id gene_id evidence; do
+       gene_evid["$gene_id"]=$evidence
+       mRNA_evid["$mRNA_id"]=$evidence
+done < "$evid"
+
+
+
+rm "$annotation_evidence_func"
+
+while IFS=$'\t' read -r -a fields; do
+   if [[ "${fields[2]}" == "gene" ]]; then
+       gene=$(grep -m1 -o -P "ID=.*?;N" <<< "${fields[8]}" | sed -E "s/ID=|;N//g")
+
+        #check evidence
+       if [[ -n "gene_evid[$gene]:-" ]]; then
+          #echo "Evidence found: ${gene_evid["$gene"]}"
+           fields[8]="${fields[8]};${gene_evid["$gene"]}"
+       fi
+
+        #check function
+       if [[ -n "gene_function[$gene]:-" ]]; then
+           fields[8]="${fields[8]};${gene_function["$gene"]}"
+       fi
+
+       IFS=$'\t'
+       echo "${fields[*]}" >> "$annotation_evidence_func"
+
+   elif [[ "${fields[2]}" == "mRNA" ]]; then
+       mRNA=$(grep -m1 -o -P "ID=.*?;P" <<< "${fields[8]}" | sed -E "s/ID=|;P//g")
+        #check evidence
+       if [[ -n "mRNA_evid[$mRNA]:-" ]]; then
+           fields[8]="${fields[8]};${mRNA_evid["$mRNA"]}"
+       fi
+
+        #check function
+       if [[ -n "mRNA_function[$mRNA]:-" ]]; then
+           fields[8]="${fields[8]};${mRNA_function["$mRNA"]}"
+       fi
+       IFS=$'\t'
+       echo "${fields[*]}" >> "$annotation_evidence_func"
+
+   else
+       IFS=$'\t'
+       echo "${fields[*]}" >> "$annotation_evidence_func"
+   fi
+done < "$annotation_file"
+
+
+
+
+
+
+
+############################################################
+
+
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+#fix mt annotation
+grep "EMBL" /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/mtDNA/HiFi/final_mitogenome.COPY.GFF.gff | sed -E "s/note=.*;gene/gene/g" - | sed -E "s/translation=.*;gene/gene/g" - > Cbren.MT.mess.gff3
+agat_convert_sp_gxf2gxf.pl --gff Cbren.MT.mess.gff3 -o Cbren.MT.ok.gff3
+
+
+cat Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.gff3 |sed -e "s/;$//g" - > Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed.gff3
+sed -i "s/Name=.*;inf/inf/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed.gff3
+
+cd $dir/PASA
+awk 'BEGIN {OFS="\t"} !/^#/ {$2="EVM"} {print}' Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed.gff3 > Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed2.gff3
+
+###add mtDNA back
+sed -i '8i\##sequence-region MtDNA 1 14613' Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed2.gff3
+grep "EMBL" ../VAL*/Cbren.MT.ok.gff3 >> Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed2.gff3
+
+grep "#" ../PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed2.gff3 > Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed3.gff3
+
+for i in I II III IV V X MtDNA;do
+
+grep -P "^${i}\t" ../PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed2.gff3 >> Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed3.gff3
+
+done
+
+
+sed -e "s/ab\tinitio\tprediction/ab initio prediction/g" -e "s/similar\tto\tAA\tsequence/similar to AA sequence/g" -e "s/protein\tmotif/protein motif/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed3.gff3 > Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+
+
+
+
+sed -i "s/^I\t/chr1\t/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+sed -i "s/^II\t/chr2\t/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+sed -i "s/^III\t/chr3\t/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+sed -i "s/^IV\t/chr4\t/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+sed -i "s/^V\t/chr5\t/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+sed -i "s/^X\t/chr6\t/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+sed -i "s/^MtDNA\t/chr7\t/g" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3
+
+
+
+
+
+#yay! it worked!
+agat_sp_manage_IDs.pl --gff Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.filt58genes.evidence_and_function.fixed4.gff3 --prefix CAEBRE -o Cbren_annotation_renamed.td.ens.tair.gff3 --ensembl --tair --type_dependent
+
+cp Cbren_annotation_renamed.td.ens.tair.gff3 Cbren_annotation_final.gff3
+sed -i "s/^chr1\t/I\t/g" Cbren_annotation_final.gff3
+sed -i "s/^chr2\t/II\t/g" Cbren_annotation_final.gff3
+sed -i "s/^chr3\t/III\t/g" Cbren_annotation_final.gff3
+sed -i "s/^chr4\t/IV\t/g" Cbren_annotation_final.gff3
+sed -i "s/^chr5\t/V\t/g" Cbren_annotation_final.gff3
+sed -i "s/^chr6\t/X\t/g" Cbren_annotation_final.gff3
+sed -i "s/^chr7\t/MtDNA\t/g" Cbren_annotation_final.gff3

@@ -1,0 +1,50 @@
+#!/bin/bash
+#SBATCH -A gc3f
+#SBATCH --mem=100g
+#SBATCH --job-name=pilon    ### Job Name
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=20            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+pilon="/projects/phillipslab/ateterina/scripts/pilon/target/scala-2.12/pilon-assembly-1.23.jar"
+tmp="/projects/phillipslab/ateterina/tmp"
+
+falconref="/projects/phillipslab/ateterina/Cbren/assembly/phased_ref_notpolished/phased.0.fasta"
+
+
+#################################
+#########Illumina reads##########
+#################################
+
+
+R1="Illumina/705_S90_L008.filt-trimmed-pair1.fastq"
+R2="Illumina/705_S90_L008.filt-trimmed-pair2.fastq"
+
+
+#module load bwa samtools
+
+#bwa index $falconref
+#bwa mem -M -t 16 $falconref $R1 $R2 |samtools view -@16 -F 4 -bS -q 15 - | samtools sort -@16 -o ${R1/_L008.filt-trimmed-pair1.fastq/FALCON.2ASM.s.bam} -
+
+
+
+
+#samtools view -@16 -b -F12 ${R1/_L008.filt-trimmed-pair1.fastq/FALCON.2ASM.s.bam} > 705_S90_L008.FALCON.2ASM.paired.bam
+#samtools view -@16 -b -F 4 -f 8 ${R1/_L008.filt-trimmed-pair1.fastq/FALCON.2ASM.s.bam} > 705_S90_L008.FALCON.2ASM.unpaired.bam
+
+
+samtools index 705_S90_L008.FALCON.2ASM.paired.bam
+samtools index 705_S90_L008.FALCON.2ASM.unpaired.bam
+
+
+#########################
+########Pilon############
+#########################
+
+
+#diploid mode
+java -Xmx90g -Djava.io.tmpdir=$tmp  -jar $pilon --genome $falconref --frags 705_S90_L008.FALCON.2ASM.paired.bam --unpaired 705_S90_L008.FALCON.2ASM.paired.bam --diploid --output Pilon_Il_2ASM --threads 20

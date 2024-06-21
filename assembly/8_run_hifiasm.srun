@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=hifiasm    ### Job Name
+#SBATCH --mem=30g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=4            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+hifiasm="/projects/phillipslab/ateterina/scripts/hifiasm/hifiasm"
+#HiFi="/projects/phillipslab/ateterina/Cbren/assembly/HIFI/willis_ccs.subreads.fastq.gz"
+HICdir="/projects/phillipslab/ateterina/Cbren/assembly/HiC"
+HiFinew="/projects/phillipslab/shared/Cbrenneri_data/C.brenneri_hifi2022/5705/ccs.Q20/m64047_220412_221739.ccs.fastq.gz"
+#filtered HI-C reads
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/hifiasm
+
+#$hifiasm -o VX0223.asm.run1 -t4 --h1 $HICdir/Hi-C_S113_L008.filt-trimmed-pair1.fastq --h2 $HICdir/Hi-C_S113_L008.filt-trimmed-pair2.fastq $HiFinew 2> VX0223.asm.run1.log
+
+awk '/^S/{print ">"$2"\n"$3}' VX0223.asm.run1.hic.p_ctg.gfa  | ../../HIFI/countFasta.pl - |tail -n11
+
+#Total length of sequence:	199265105 bp
+#Total number of sequences:	8757
+#N25 stats:			25% of total sequence length is contained in the 809 sequences >= 36435
+#bp
+#N50 stats:			50% of total sequence length is contained in the 2672 sequences >= 21791
+#bp
+#N75 stats:			75% of total sequence length is contained in the 5282 sequences >= 17011
+#bp
+#Total GC count:			82493595 bp
+#GC %:				41.40 %

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=50G
+#SBATCH --job-name=interpro    ### Job Name
+#SBATCH --time=520:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-25813%15           ### Array index
+#SBATCH --cpus-per-task=4           ### Number of CPU
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+#source ~/.bashrc
+#conda activate agatenv
+#export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+#module load  java/1.8.0 interproscan/5.27-66.0
+#interproscan.sh -i $file -f tsv -goterms -pa -o $file.interpro.tsv -cpu 8
+
+dir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+ref="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.softmasked.fasta"
+#gffPASA="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.gff3"
+ann="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3"
+ref="$dir/VALIDATION/Cbren_soft_masked_IVrev.fasta"
+
+cd $dir/VALIDATION
+
+
+#cp ${ann/.gff3/}_longest_prot.fasta Cbren_BAD_NAMES_longest_prot.fasta
+#sed -i "s/\*$//g" Cbren_BAD_NAMES_longest_prot.fasta
+#mkdir Cbren_prot_split
+#perl /projects/phillipslab/ateterina/scripts/fasta-splitter.pl --n-parts 25814 --line-length 0 --out-dir Cbren_prot_split --nopad --measure count ./Cbren_BAD_NAMES_longest_prot.fasta
+
+
+cd Cbren_prot_split
+LISTFILES=(Cbren_BAD_NAMES_longest_prot.part-*.fasta)
+file=${LISTFILES[$SLURM_ARRAY_TASK_ID]}
+
+source ~/.bashrc
+conda activate interproscan
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/interproscan/lib/perl5
+
+
+interproscan.sh -i $file -f tsv -goterms -pa -o ${file}.interpro.tsv -cpu 4 -t p

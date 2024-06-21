@@ -1,0 +1,89 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=maf2fasta   ### Job Name
+#SBATCH --mem=10g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-2467%100           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+#########################################################
+#Genomic data:
+
+#C. doughertyi, C. wallacei and other C.sps are from Caenorhabditis v.2 http://download.caenorhabditis.org/v2/genome_files/
+#C. tropicalis, and C. elegans  from WormBase ParaSite Home Version: WBPS16 (WS279)
+
+
+
+
+source ~/.bashrc
+conda activate maffilter
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/splitmafs50k_NEW
+
+LISTFILES=($(ls -rt *.maf))
+file=${LISTFILES[$SLURM_ARRAY_TASK_ID]}
+
+
+echo $file
+allfilt="/projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/allspecies.filter.txt"
+
+
+#cat /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/allspecies.filter.txt
+#Cbren
+#Cdoug
+#Celeg
+#Crema
+#Csp44
+#Csp48
+#Csp51
+#Csp54
+#Ctrop
+#Cwall
+
+mafFilter $file  -tolerate -minCol=75 -minRow=10 -maxRow=10 -factor -speciesFilter=$allfilt > ${file/.maf/.ALLSPECIES.MAF}
+sed -E "s/(s [a-zA-Z]+)\.[a-zA-Z0-9_]* /\\1/g" ${file/.maf/.ALLSPECIES.MAF} > ${file/.maf/.FILT2.MAF}
+
+
+/projects/phillipslab/ateterina/scripts/last/scripts/maf-join ${file/.maf/.FILT2.MAF} > ${file/.maf/.FILT2.JOIN.MAF}
+
+conda deactivate
+conda activate msaconverter
+
+
+msaconverter -i ${file/.maf/.FILT2.JOIN.MAF} -o ${file/.maf/.FILT.fasta} -p maf -q fasta -t DNA
+sed -i "s/\..*$//g" ${file/.maf/.FILT.fasta}
+
+
+
+
+
+###rename sequences
+
+rm ${file/.maf/.combo.fasta};
+
+
+for sp in Cbren Cdoug Celeg Crema Csp44 Csp48 Csp51 Csp54 Ctrop Cwall; do
+
+
+    echo $sp > $sp;
+    echo "> $sp" > ${file/.maf/}.${sp}.TMP.fasta
+    perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' $sp ${file/.maf/.FILT.fasta} | grep -v ">" - | tr -d '\n' | fold -w 80 - >> ${file/.maf/}.${sp}.TMP.fasta
+    sed -i '$s/$/\n/' ${file/.maf/}.${sp}.TMP.fasta;
+    cat ${file/.maf/}.${sp}.TMP.fasta >> ${file/.maf/.combo.fasta}
+    rm ${file/.maf/}.${sp}.TMP.fasta
+
+done
+
+
+
+
+source ~/.bashrc
+conda deactivate
+conda activate iqtree
+
+iqtree -s ${file/.maf/.combo.fasta} -o Celeg -redo

@@ -1,0 +1,196 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips    ### Partition
+#SBATCH --job-name=genome    ### Job Name
+#SBATCH --time=100:00:00        ### WallTime
+#SBATCH --mem=40G
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=1           ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=16           ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+
+#
+mkdir -p FINAL_genome
+cd FINAL_genome
+
+
+draftGenome="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FIXscaf5/LR_fix_scaf_5/scaf5_closed_gaps/iteration-3/gapclosed.fasta"
+
+
+#lower to upper, plus remove NNs that I added to fix scaf5
+
+#cat $draftGenome |tr '[:lower:]' '[:upper:]' | sed -e 's/N//g' - > Cbren_upper_noN.fasta
+
+draftGenome2="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FINAL_genome/Cbren_upper_noN.fasta"
+
+
+#blast to CE
+#module load easybuild ifort/2017.1.132-GCC-6.3.0-2.27 impi/2017.1.132 NCBI-Toolkit/18.0.0
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS17/species/caenorhabditis_elegans/PRJNA13758/caenorhabditis_elegans.PRJNA13758.WBPS17.genomic.fa.gz
+
+#gunzip caenorhabditis_elegans.PRJNA13758.WBPS17.genomic.fa.gz
+
+#makeblastdb -in caenorhabditis_elegans.PRJNA13758.WBPS17.genomic.fa -parse_seqids -dbtype nucl
+
+
+#blastn -db caenorhabditis_elegans.PRJNA13758.WBPS17.genomic.fa -num_threads 16  -evalue 1e-15 -outfmt '6 qseqid sseqid qlen slen qstart qend sstart send length pident nident mismatch evalue bitscore' -query $draftGenome2 -out ${draftGenome2/.fasta/.blast_CEgenome.eval.1e-15.out};
+
+
+
+
+#awk '{key = $1"\t"$2; if ($8 > $7 && $6 > $5) {same[key] += ($8 - $7)} else if ($8 < $7 && $6 < $5) {same[key] += ($7 - $8)} else if ($8 > $7 && $6 < $5) {reversed[key] += ($8 - $7)} else {reversed[key] += ($7 - $8)}} END {printf "%-25s%-25s%-25s%-25s%-25s\n", "C. brenneri", "C. elegans", "Same orientation", "Reversed orientation", "Orientation status"; for (key in same) {printf "%-25s%-25s%-25s%-25s%-25s\n", key, "", same[key], reversed[key], (same[key] > reversed[key] ? "It is alright" : "Need to reverse it")} for (key in reversed) {if (!(key in same)) {printf "%-25s%-25s%-25s%-25s%-25s\n", key, "", "", reversed[key], "Need to reverse it"}}}' ${draftGenome2/.fasta/.blast_CEgenome.eval.1e-15.out} | sort -k1,1 -k3,3nr -k4,4nr | awk '!seen[$1]++' > Cbren_chr_orientation_top.txt
+
+
+
+#cat Cbren_chr_orientation_top.txt
+#C. brenneri              C. elegans               Same orientation         Reversed orientation     Orientation status
+#HIC_SCAFFOLD_1	X                                  425574                   1530504                  Need to reverse it
+#HIC_SCAFFOLD_2	IV                                 531533                   783904                   Need to reverse it
+#HIC_SCAFFOLD_3	III                                405361                   254705                   It is alright
+#HIC_SCAFFOLD_4	V                                  640984                   748047                   Need to reverse it
+#HIC_SCAFFOLD_5	II                                 526776                   269037                   It is alright
+#HIC_SCAFFOLD_6	I                                  316546                   371930                   Need to reverse it
+
+
+
+
+#rename and rotate
+
+
+#sed -i "s/>HIC_SCAFFOLD_1/>X/" Cbren_upper_noN.fasta
+#sed -i "s/>HIC_SCAFFOLD_2/>IV/" Cbren_upper_noN.fasta
+#sed -i "s/>HIC_SCAFFOLD_3/>III/" Cbren_upper_noN.fasta
+#sed -i "s/>HIC_SCAFFOLD_4/>V/" Cbren_upper_noN.fasta
+#sed -i "s/>HIC_SCAFFOLD_5/>II/" Cbren_upper_noN.fasta
+#sed -i "s/>HIC_SCAFFOLD_6/>I/" Cbren_upper_noN.fasta
+
+
+#reverse chrom I, IV, V X, based on alignment with C.elegans and C. remanei
+
+#for chr in I II III IV V X;do
+#   echo $chr >$chr;
+#
+#done
+
+
+#perl -pe '/^>/ ? print "\n" : chomp' I.1.fasta | sed --expression='1d' - | sed --expression='$a\' - |while read L; do if [[ $L =~ ^'>' ]]; then echo $L; else echo $L | rev | tr "ATGCatgc" "TACGtacg" ; fi ; done |fold -w 60 - > I.fasta
+#perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' II Cbren_upper_noN.fasta |fold -w 60 -  >II.fasta
+#perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' III Cbren_upper_noN.fasta |fold -w 60 - >III.fasta
+#perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' IV Cbren_upper_noN.fasta - >IV.1.fasta
+#perl -pe '/^>/ ? print "\n" : chomp' IV.1.fasta | sed --expression='1d' - | sed --expression='$a\' - |while read L; do if [[ $L =~ ^'>' ]]; then echo $L; else echo $L | rev | tr "ATGCatgc" "TACGtacg" ; fi ; done |fold -w 60 - > IV.fasta
+#perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' V Cbren_upper_noN.fasta >V.1.fasta
+#perl -pe '/^>/ ? print "\n" : chomp' V.1.fasta | sed --expression='1d' - | sed --expression='$a\' - |while read L; do if [[ $L =~ ^'>' ]]; then echo $L; else echo $L | rev | tr "ATGCatgc" "TACGtacg" ; fi ; done |fold -w 60 - > V.fasta
+
+
+
+#perl -ne 'if(/^>(\S+)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' X Cbren_upper_noN.fasta > X.1.fasta
+#perl -pe '/^>/ ? print "\n" : chomp' X.1.fasta | sed --expression='1d' - | sed --expression='$a\' - |while read L; do if [[ $L =~ ^'>' ]]; then echo $L; else echo $L | rev | tr "ATGCatgc" "TACGtacg" ; fi ; done |fold -w 60 - > X.fasta
+
+#cat I.fasta II.fasta III.fasta IV.fasta V.fasta X.fasta |tr "atgc" "ATGC" > Cbren.chr.fasta
+
+
+#add mtDNA
+
+#cp /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/mtDNA/HiFi/final_mitogenome.fasta MtDNA.fasta
+
+#sed -i "s/>ptg000004l_rotated ptg000004l/>MtDNA/" MtDNA.fasta
+
+#cp Cbren.chr.fasta Cbren.genome.fasta
+#cat MtDNA.fasta |fold -w 60 - >>  Cbren.genome.fasta
+
+
+#run inspector
+#source ~/.bashrc
+#conda activate ins
+
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq"
+
+
+# Evaluate assembly with hifi reads
+#inspector.py -c Cbren.genome.fasta -r $HiFi -o inspector_final_hifi/ --datatype hifi -t 16
+
+
+
+#run meruiry
+
+source ~/.bashrc
+conda activate merqury
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+
+cd Cbren_merqury
+
+source ~/.bashrc
+conda activate merqury
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+
+cd Cbren_merqury
+
+
+#scaf="Cbren.ALL.polished_hifi_other_scaf.fasta"
+ref="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FINAL_genome/Cbren.genome.fasta"
+
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq.gz"
+
+
+MERQURY="/projects/phillipslab/ateterina/scripts/merqury"
+
+###see the previous steps in the script 11_run_merqury
+mkdir -p FINAL_merqury
+cd FINAL_merqury
+
+
+#get the best k-mer size
+#sh $MERQURY/best_k.sh 125000000
+#18.4308
+
+#Use kmer=19
+kmer=19
+
+# 2. Build meryl dbs
+###cd merqury
+#meryl k=$kmer count output ${HiFi/.fastq.gz/.meryl} $HiFi memory=30g threads=12
+
+
+
+# 3. Merge ##I suspect it was unnecessary
+#meryl union-sum output Cbren.union.meryl ${HiFi/.fastq.gz/.meryl} memory=30g threads=12
+
+#https://github.com/marbl/merqury/wiki/2.-Overall-k-mer-evaluation
+# 4. Overall k-mer evaluation
+#ln -s ../Cbren.union.meryl
+
+#cp $ref .
+
+#merqury.sh Cbren.union.meryl Cbren.genome.fasta Cbren_merqury_out_FINAL
+
+###other stufff
+
+
+
+#$MERQURY/eval/qv.sh Cbren.union.meryl Cbren.genome.fasta Cbren_qv_out
+
+#$MERQURY/eval/per_seq_qv.sh Cbren.genome.fasta  Cbren.union.meryl Cbren_seqqv_out
+
+#$MERQURY/eval/read_multiplicity.sh Cbren.genome.fasta  Cbren.union.meryl Cbren_muplipl_out
+
+#$MERQURY/eval/spectra-cn.sh Cbren.union.meryl Cbren.genome.fasta Cbren_spectr_out
+
+
+#Rscript $MERQURY/plot/plot_spectra_cn.R -f Cbren_spectr_out.spectra-asm.hist -o Cbren_spectr_plot
+
+
+Rscript $MERQURY/plot/plot_spectra_cn.R -f Cbren_spectr_out.Cbren.genome.spectra-cn.hist -o Cbren_spectr_plot_cn

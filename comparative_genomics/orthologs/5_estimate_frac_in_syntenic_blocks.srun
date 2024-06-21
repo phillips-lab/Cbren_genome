@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=frac   ### Job Name
+#SBATCH --mem=60g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref
+
+mkdir -p synteny_fractions
+cd synteny_fractions
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/synteny_fractions
+
+python estimate_intron_exon_overlap_final_with_counts.py

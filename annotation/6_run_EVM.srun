@@ -1,0 +1,67 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=100g
+#SBATCH --job-name=EVM    ### Job Name
+#SBATCH --time=204:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+#no#conda activate braker
+
+ref="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.softmasked.fasta"
+refm="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.hardmasked.fasta"
+wdir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+
+EVM="/projects/phillipslab/ateterina/scripts/EVidenceModeler-1.1.1/evidence_modeler.pl"
+EVM_HOME="/projects/phillipslab/ateterina/scripts/EVidenceModeler-1.1.1"
+isoseq="/projects/phillipslab/ateterina/Cbren/isoseq/2smrt_cells.Cbren.relaxFilter.75_collapsed.gff"
+#https://evidencemodeler.github.io
+
+
+
+#get gff with repeats:
+
+#python2 ./generate_masked_ranges.py $refm > Cbren_masked.bed
+#module load bedtools
+#bedtools sort -i Cbren_masked.bed -faidx ${ref}.fai| bedtools merge -i - | awk -v OFS='\t' -f ./bed2gff.awk > EVM_RNA/Cbren_masked.gff
+
+
+
+
+module load perl
+export PERL5LIB=/packages/perl/5.24.2/lib/5.24.2
+export PERLTOP=/packages/perl/5.24.2
+export PERL_LOCAL_LIB_ROOT=/packages/perl/5.24.2
+
+cd EVM_RNA
+#cp braker and maker to one file
+#https://biohpc.cornell.edu/doc/genome_2020_exercise2.html
+
+
+
+
+
+$EVM_HOME/EvmUtils/partition_EVM_inputs.pl --genome $ref --gene_predictions combo_maker_braker.gff --repeats Cbren_masked.gff  --transcript_alignments $isoseq\
+      --segmentSize 100000 --overlapSize 10000 --partition_listing partitions_list.out;
+
+
+      ABINITIO_PREDICTION	AUGUSTUS	6
+      ABINITIO_PREDICTION	maker	3
+      TRANSCRIPT	spliced_transcript_alignments	1
+
+$EVM_HOME/EvmUtils/write_EVM_commands.pl --genome $ref --weights /projects/phillipslab/ateterina/Cbren/final_annotation/EVM_RNA/weights_MB_iso.txt --gene_predictions combo_maker_braker.gff --repeats Cbren_masked.gff --transcript_alignments $isoseq \
+      --output_file_name evm.out  --partitions partitions_list.out >  commands.list;
+
+
+
+$EVM_HOME/EvmUtils/execute_EVM_commands.pl commands.list | tee run.log;
+$EVM_HOME/EvmUtils/recombine_EVM_partial_outputs.pl --partitions partitions_list.out --output_file_name evm.out;
+
+$EVM_HOME/EvmUtils/convert_EVM_outputs_to_GFF3.pl  --partitions partitions_list.out --output evm.out  --genome $ref;
+
+
+find . -regex ".*evm.out.gff3" -exec cat {} \; > Cbren_EVM.all.BMI.gff3

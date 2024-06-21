@@ -1,0 +1,42 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips	### Partition
+#SBATCH --job-name=inspector    ### Job Name
+#SBATCH --time=100:00:00        ### WallTime
+#SBATCH --mem=100G
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=1           ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=1           ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+#load the modules
+
+
+source ~/.bashrc
+conda activate genomescope
+
+gsdir="/projects/phillipslab/ateterina/scripts/genomescope2.0"
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+mkdir -p GENESCOPE
+
+cd GENESCOPE
+
+
+reads="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq"
+
+
+#following the instructions from https://github.com/tbenavi1/genomescope2.0?tab=readme-ov-file
+
+
+jellyfish count -C -m 21 -s 10000000000 -t 1 $reads -o HiFi_reads.jf
+jellyfish histo -t 1 HiFi_reads.jf > HiFi_reads.histo
+
+
+$gsdir/genomescope.R -i HiFi_reads.histo -o genomescpe_HiFi -k 21 -p 2

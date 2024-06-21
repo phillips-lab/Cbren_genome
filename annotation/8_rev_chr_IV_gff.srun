@@ -1,0 +1,69 @@
+#!/bin/bash
+
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=40G
+#SBATCH --job-name=reverse    ### Job Name
+#SBATCH --time=520:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16           ### Number of CPU
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+#module load pasa/2.3.3
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+dir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+ref="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.softmasked.fasta"
+gffPASA="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.gff3"
+
+
+#cd reverse_IV
+#OK#
+#agat config --expose --no-tabix
+#agat_convert_sp_gxf2gxf.pl --gff $gffPASA -o ${gffPASA/gff3/fixed3.gff3}
+
+
+
+#sort -k1,1 -k4,4n ${gffPASA/gff3/fixed3.gff3} > ${gffPASA/gff3/fixed_sorted.gff3}
+#then I removed the first line
+
+gtpath="/projects/phillipslab/ateterina/scripts/genometools/bin"
+
+#${gtpath}/gt gff3  -sortlines -tidy -retainids ${gffPASA/gff3/fixed_sorted.gff3} > ${gffPASA/gff3/fixed_sorted_gt.gff3}
+
+
+module load racs-eb/1 HTSlib/1.7-foss-2018a
+#bgzip ${gffPASA/gff3/fixed_sorted_gt.gff3}
+#tabix -p gff ${gffPASA/gff3/fixed_sorted_gt.gff3}.gz
+#
+
+#bgzip -c -d ${gffPASA/gff3/fixed_sorted_gt.gff3}.gz > ${gffPASA/gff3/fixed_sorted_gt}.TMP.gff
+
+#gff3sort="/projects/phillipslab/ateterina/scripts/gff3sort/gff3sort.pl"
+#yep, the gff3 file should be not compressed!
+#perl $gff3sort --precise ${gffPASA/gff3/fixed_sorted_gt}.TMP.gff > ${gffPASA/gff3/}output.gff3sort.gff3
+
+
+#grep -P "^IV\t" Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.gff3 > Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.chromIV.gff3
+
+
+
+
+#agat_sq_reverse_complement.pl --gff PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.chromIV.gff3 --fasta $ref  -o PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.chromIV.REV.gff3
+
+
+#agat_convert_sp_gxf2gxf.pl --gff PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.chromIV.REV.gff3  -o PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.chromIV.REV.sorted.gff3
+
+
+grep -P "^#|^I\t|^II\t|^III\t" PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.gff3 > PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3
+
+grep -v "#" PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.chromIV.REV.sorted.gff3 >> PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3
+
+grep -P "^V\t|^X\t" PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.gff3sort.gff3 >> PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3

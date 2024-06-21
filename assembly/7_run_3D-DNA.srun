@@ -1,0 +1,66 @@
+#!/bin/bash
+#SBATCH -A gc3f       ### Partition
+#SBATCH --mem=100g
+#SBATCH --job-name=3D    ### Job Name
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+dir="/projects/phillipslab/ateterina/Cbren/assembly/3D_ASSEMBLY2"
+juicerdir="/projects/phillipslab/ateterina/scripts/juicer/CPU"
+ASM="/projects/phillipslab/ateterina/scripts/3d-dna/run-asm-pipeline.sh"
+
+
+
+module load easybuild  GCC/6.3.0-2.27  OpenMPI/2.0.2 LASTZ/1.04.00
+
+
+#aligned/merged_nodups.txt is the result of the previous step. ASM takes several hours.
+
+$ASM -m diploid -i 10000 -r 5 $dir/Pilon_Il_2ASM.fasta $dir/aligned/merged_nodups.txt
+
+
+#!!!RUN JUICER from steps 2 and 3 with the new assembly! Maybe there's a normal way to extract hic from this pipeline, but as scaffold names changed
+
+
+
+
+
+#module load racs-eb GNU/5.1.0-2.25 bwa java CUDA/7.5.18
+
+#After Juicer finished
+#this script can use file from any directory
+#cp $dir/Pilon_Il_2ASM.FINAL.fasta $ddir/utils/Pilon_Il_2ASM.FINAL.fasta
+
+#cd $ddir/utils
+#awk -f generate-assembly-file-from-fasta.awk phased.0.FINAL.fasta > Pilon_Il_2ASM.FINAL.new.assembly
+#cp Pilon_Il_2ASM.FINAL.new.assembly /projects/phillipslab/ateterina/Cbren/assembly/3D_ASSEMBLY2/
+
+
+$ddir/visualize/run-assembly-visualizer.sh -p false -q 30 /projects/phillipslab/ateterina/Cbren/assembly/3D_ASSEMBLY2/Pilon_Il_2ASM.FINAL.new.assembly /projects/phillipslab/ateterina/Cbren/assembly/3D_ASSEMBLY2/VIS/aligned/merged_nodups.txt
+
+
+
+
+
+
+###Load the hic and assembly file into Juicer.
+ddir="/projects/phillipslab/ateterina/scripts/3d-dna"
+
+#it produces the final reference
+$ddir/run_post_rew.sh -q 30 -r $dir/VIS/VIS2/Pilon_Il_2ASM.FINAL.FINAL.new.nice.review.assembly $dir/VIS/VIS2/Pilon_Il_2ASM.FINAL.FINAL.fasta $dir//VIS/VIS2/aligned/merged_nodups.txt
+
+
+
+
+
+
+
+
+######

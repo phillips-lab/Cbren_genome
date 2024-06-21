@@ -1,0 +1,47 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=genepainter   ### Job Name
+#SBATCH --mem=200g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0          ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate genepainter
+
+gpdir="/projects/phillipslab/ateterina/scripts/genepainter/gene_painter"
+parscript="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/parse_intron_data_genepainter.py"
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ORTHO
+
+#cat SP.txt
+#Cbren
+#Cbrig
+#Celeg
+#Cinop
+#Cnigo
+#Crema
+#Ctrop
+
+
+
+for i in *.-phylo.fas;do
+
+if (grep -P "^[01]" $i > /dev/null 2>&1) then
+paste SP.txt <(awk '/^>/{if (seq) print seq; printf "%s\n",$0; seq=""; next} {seq = seq $0} END {if (seq) print seq}' $i | sed -E '/^>/ {N; s/\n/\t/;}' - | sed -E "s/>//g") > ${i/.-phylo.fas/.phCOMB.tab};
+fi
+done
+
+
+
+for i in *.phCOMB.tab;do
+    echo $i;
+    python  $parscript $i;
+done

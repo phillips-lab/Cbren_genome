@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=hal   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+workdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/genomes"
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes
+
+mkdir splitmafs50k_NEW
+
+$workdir/../hal2maf_split.pl --halfile $workdir/c.bren.cactus.NEW.10gen --refGenome Cbren --cpus 1 --chunksize 50000 --overlap 0 --outdir $workdir/splitmafs50k_NEW --hal_exec_dir /projects/phillipslab/ateterina/scripts/HAL/hal/bin

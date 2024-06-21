@@ -1,0 +1,49 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=fmlrc   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=20            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/
+
+###########################################
+### Correction of CLR PacBio reeads  #####
+###########################################
+
+
+
+PacBioreads="/projects/phillipslab/ateterina/Cbren/assembly/2smrt_pb_noadapters_names.fasta"
+R1="/projects/phillipslab/ateterina/Cbren/assembly/Illumina/705_S90_L008.filt-trimmed-pair1.fastq"
+R2="/projects/phillipslab/ateterina/Cbren/assembly/Illumina/705_S90_L008.filt-trimmed-pair2.fastq"
+
+
+
+
+
+
+
+source ~/.bashrc
+conda activate fmlrc
+
+
+
+mkdir -p FMLRC_correcter_PacBioreads
+cd FMLRC_correcter_PacBioreads
+
+dir="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FMLRC_correcter_PacBioreads"
+#see https://github.com/holtjma/fmlrc/blob/master/example/run_example.sh
+#first,
+
+mkdir -p temp
+
+cat $R1 $R2 | awk "NR % 4 == 2" | sort -T ./temp | tr NT TN | ropebwt2 -LR | tr NT TN | fmlrc-convert $dir/Cbren_pacbio_clr_raw_msbwt.npy
+
+
+fmlrc -p 20  $dir/Cbren_pacbio_clr_raw_msbwt.npy $PacBioreads $dir/Cbren_pacbio_fmlrc_corected_final.fa

@@ -1,0 +1,83 @@
+#!/bin/bash
+#SBATCH --partition=longfat
+#SBATCH --mem=200g
+#SBATCH --job-name=sga    ### Job Name
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+###BATCH --mem=50g
+#########3390761
+#module load anaconda3
+
+
+
+#sga preprocess --pe-mode 1 705_S90_L008.filt-trimmed-pair1.fastq 705_S90_L008.filt-trimmed-pair2.fastq > cbren_reads.fastq
+
+
+#https://github.com/jts/sga/wiki/preqc
+#sga index -a ropebwt -t 16 --no-reverse cbren_reads.fastq
+
+
+#sga correct -k 41 --discard --learn -t 16 -o cbren_reads.k41.fastq cbren_reads.fastq
+
+
+# Index the corrected data.
+#sga index -a ropebwt -t 24 cbren_reads.k41.fastq
+
+
+
+# Remove exact-match duplicates and reads with low-frequency k-mers
+# The minimum k-mer coverage for the filter step. Each 27-mer
+# in the reads must be seen at least this many times
+#here COV_FILTER=2
+#sga filter -x 2 -t 24 --homopolymer-check --low-complexity-check cbren_reads.k41.fastq
+
+
+
+
+
+
+
+# Merge simple, unbranched chains of vertices
+# Overlap parameter used for FM-merge. This value must be no greater than the minimum
+# overlap value you wish to try for the assembly step.
+# here MOL=55
+#sga fm-merge -m 55 -t 24 -o merg_cbren_reads.k41.fa cbren_reads.k41.filter.pass.fa
+
+
+
+
+
+
+
+
+
+#sga index -d 1000000 -t 24 merg_cbren_reads.k41.fa
+
+
+# Remove any substrings that were generated from the merge process
+#sga rmdup -t 24 merg_cbren_reads.k41.fa
+
+
+# Compute the structure of the string graph
+#sga overlap -m 55 -t 24 merg_cbren_reads.k41.rmdup.fa
+
+#you are here#
+
+# Perform the contig assembly without bubble popping
+# Overlap parameter used for the final assembly. This is the only argument
+# to the script
+#here OL=75
+# Turn off collapsing bubbles around indels
+#MAX_GAP_DIFF=0
+# Parameter for the small repeat resolution algorithm
+#R=10
+#sga assemble -m 75 -g 0 -r 10 -o assemble.m75 merg_cbren_reads.k41.rmdup.asqg.gz
+
+
+
+awk 'BEGIN {RS = ">" ; ORS = ""} length($2) >= 5000 {print ">"$0}' assemble.m75-contigs.fa  > SGA_assembly_5kb.fa

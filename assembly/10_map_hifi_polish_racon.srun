@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=racon   ### Job Name
+#SBATCH --mem=160g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=8            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+#conda activate pba
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq.gz"
+ref3D="/projects/phillipslab/ateterina/Cbren/assembly/HIFI/RACON/Pilon_Il_2ASM.FINAL.FINAL.FINAL.fasta"
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/
+
+
+source ~/.bashrc
+conda activate pb-assembly
+
+#https://github.com/PacificBiosciences/pbbioconda/wiki/Assembling-HiFi-data:-FALCON-Unzip3
+
+
+module load samtools
+
+#pbmm2 align --preset CCS --sort -j 8 $ref3D  $HiFi hifi_cbrenALL_align_hifi.bam
+
+#samtools view -@ 8 -F 1796 -q 20 -b hifi_cbrenALL_align_hifi.bam | samtools sort -@ 8 -o hifi_cbrenALL_align_hifi.s.bam -
+#samtools index hifi_cbrenALL_align_hifi.s.bam
+
+
+samtools view -F 1796 -q 20 hifi_cbrenALL_align_hifi.bam > hifi_cbrenALL_align_hifi.sam
+racon -u -t 8 $HiFi hifi_cbrenALL_align_hifi.sam $ref3D > Cbren.ALL.polished_hifi.fasta

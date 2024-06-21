@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --partition=short       ### Partition
+#SBATCH --job-name=filt_CB    ### Job Name
+#SBATCH --time=00:240:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-1           ### Array index
+#SBATCH --cpus-per-task=10            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+module load easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132 skewer
+
+
+
+skewer -x CTGTCTCTTATA -t 12 -l 36 -r 0.01 -d 0.01 -q 20 -o 705_S90_L008.filt 705_S90_L008_R1_001.fastq 705_S90_L008_R2_001.fastq

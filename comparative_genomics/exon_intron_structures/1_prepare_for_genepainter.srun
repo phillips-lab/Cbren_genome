@@ -1,0 +1,38 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=genepainter   ### Job Name
+#SBATCH --mem=20g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-6          ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+fdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/Results_Oct28/Orthogroups"
+outdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ALLGFF2"
+
+
+
+cd $fdir
+
+LISTFILES=($(ls -rt *_1-to-1_genes.txt))
+file=${LISTFILES[$SLURM_ARRAY_TASK_ID]}
+
+ann=${file/_genes.txt/.tmp.gff}
+
+ls $fdir/$ann
+sed -i "s/$/;/g" $ann # ; at the end of the lines
+
+
+while read -r line; do
+            awk -v pattern="$line" 'index($0, "ID=" pattern ";") || index($0, "Parent=" pattern ";") || index($0, pattern "$")' ${fdir}/${ann} >> ${outdir}/${line}.gff;
+done < ${file}
+
+
+
+#also copy single copy orthologs to ORTHO
+
+#mkdir -p /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ORTHO
+#cp  /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/Results_Oct28//Single_Copy_Orthologue_Sequences/*OG*fa /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ORTHO

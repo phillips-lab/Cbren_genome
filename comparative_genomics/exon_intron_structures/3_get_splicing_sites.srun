@@ -1,0 +1,66 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=genepainter   ### Job Name
+#SBATCH --mem=20g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-6          ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate agatenv1.2
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv1.2/lib/perl5/
+
+dir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/Results_Oct28/Orthogroups"
+#####gendir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/synteny_fractions"
+
+#Creme chrIV is not rotated - check that it's ok
+gendir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/GENOMES"
+
+cd $dir
+
+species_names=("Cbren" "Cbrig" "Celeg" "Cinop" "Cnigo" "Crema" "Ctrop")
+sname=${species_names[$SLURM_ARRAY_TASK_ID]}
+suf="1-to-1"
+ann=$dir/${sname}_${suf}_tidy.gff
+#"$fdir/${sname}_ann.longest.END.gff" # it has ; at the end of the lines
+	    echo $sname;
+
+
+#agat_sp_add_splice_sites.pl --gff ${sname}_${suf}_tidy_INT.gff -o ${sname}_${suf}_intr_ss.gff
+
+#rm ${sname}_${suf}_tidy_INT.gff
+
+
+#agat agg introns, add splicing sites (ss)
+
+
+#output sequnces of 5' ss
+agat_sp_extract_sequences.pl -t five_prime_cis_splice_site -g ${sname}_${suf}_intr_ss.gff -f $gendir/${sname}_genome.fasta -o ${sname}_${suf}_5ss.fasta
+#output sequnces of 3' ss
+agat_sp_extract_sequences.pl -t three_prime_cis_splice_site -g ${sname}_${suf}_intr_ss.gff -f $gendir/${sname}_genome.fasta -o ${sname}_${suf}_3ss.fasta
+
+
+
+#get splicing sites
+
+#for i in *ss.fasta;do sed -E 's/^[^>].*/\U&/' $i | sed -E  '/^>/ {N; s/\n/ /;}' - |cut -f1,2,6 -d " " - | sed -E "s/transcript=//g" - | sed -E "s/>splice._//g" - > ${i/.fasta/.tab}; done
+
+#for f5ss in *_1-to-1_5ss.tab;do 	f3ss=${f5ss/_5ss/_3ss}; awk 'NR==FNR {data[$1,$2]=$3; next} {if (($1,$2) in data) print $1, $2, data[$1,$2], $3}' $f5ss $f3ss > ${f5ss/_5ss/_5-3combo.ss.tab}; done
+
+
+
+#awk -F"\t" 'BEGIN{print "Parent\tIntron Count\tFive Prime Count\tThree Prime Count"} $3=="mRNA"{if(gene_id!=""){print gene_id, intron_count[gene_id]+0, five_prime_count[gene_id]+0, three_prime_count[gene_id]+0} gene_id=extract_attribute($9, "ID"); next} $3=="intron"{intron_count[gene_id]++} $3=="five_prime_cis_splice_site"{five_prime_count[gene_id]++} $3=="three_prime_cis_splice_site"{three_prime_count[gene_id]++} END{if(gene_id!=""){print gene_id, intron_count[gene_id]+0, five_prime_count[gene_id]+0, three_prime_count[gene_id]+0}} function extract_attribute(field, attribute){match(field, attribute"=([^;]+)", arr); return arr[1]}' Cbren_1-to-1_intr_ss.gff |head -n50
+
+
+
+#get phase
+#for i in C*_1-to-1_intr_ss.gff;do echo $i; grep -P "\tCDS" $i |grep -v -P "exon_number=1;|CDS1;|-cds1;" -| cut -f8,9 | sed -E "s/ID=//g" - |tr ';' '\t' |cut -f1-3 | sed -E "s/Parent=//g"|sed -E  "s/^/p/g" - > ${i/_intr_ss.gff/_PHASE.tab}; done
+
+#get intron lengths
+#for i in C*_1-to-1_intr_ss.gff;do echo $i; grep -P "\tintron" $i | cut -f4,5,7,9 | sed -E "s/ID=//g" - |tr ';' '\t' | sed -E "s/Parent=//g"  | awk '{print $2-$1"\t"$3"\t"$4"\t"}' - > ${i/_intr_ss.gff/_intlen.tab}; done

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=STAR_rna    ### Job Name
+#SBATCH --time=520:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16           ### Number of CPU
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+module load easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132 STAR/2.5.3a
+
+dir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+
+ref="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.softmasked.fasta"
+
+#generate the Star reference
+#mkdir -p Cbren_star_ref
+#STAR --runThreadN 16 --runMode genomeGenerate --genomeDir ./Cbren_star_ref --genomeFastaFiles $ref
+
+
+#cat a_S39_L008.filt-trimmed-pair1.fastq b_S40_L008.filt-trimmed-pair1.fastq c_S41_L008.filt-trimmed-pair1.fastq >Cbren_RNA_trim.R1.fastq
+#cat a_S39_L008.filt-trimmed-pair2.fastq b_S40_L008.filt-trimmed-pair2.fastq c_S41_L008.filt-trimmed-pair2.fastq >Cbren_RNA_trim.R2.fastq
+
+
+#1-pass
+
+mkdir -p Cbren_1pass
+cd Cbren_1pass
+
+STAR --genomeDir $dir/Cbren_star_ref --readFilesIn $dir/Cbren_RNA_trim.R1.fastq $dir/Cbren_RNA_trim.R2.fastq --runThreadN 16
+
+cd ..
+
+
+#pass 2
+
+mkdir Cbren_star_ref2p
+STAR --runThreadN 16 --runMode genomeGenerate --genomeDir $dir/Cbren_star_ref2p --genomeFastaFiles $ref --sjdbFileChrStartEnd $dir/Cbren_1pass/SJ.out.tab
+
+
+mkdir -p Cbren_2pass
+cd Cbren_2pass
+
+STAR --genomeDir $dir/Cbren_star_ref2p --readFilesIn $dir/Cbren_RNA_trim.R1.fastq $dir/Cbren_RNA_trim.R2.fastq --runThreadN 16

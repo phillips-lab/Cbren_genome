@@ -1,0 +1,87 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips    ### Partition
+#SBATCH --job-name=contam    ### Job Name
+#SBATCH --time=100:00:00        ### WallTime
+#SBATCH --mem=30G
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=1           ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=16           ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+mkdir -p REMOVECONT
+
+cd REMOVECONT
+nogaps="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/EXTEND_TERMINI/Cbren_gapless_genome.fasta"
+
+
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq.gz"
+
+#conda deactivate
+source ~/.bashrc
+#conda activate blast
+module load samtools
+
+
+###remove bacterial scafffolds
+
+LIST="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/BLOBSNOGAPS/LIST_OF_NEMATODA_and_NO-HIT.txt"
+
+
+#samtools faidx $nogaps -r $LIST -o Cbren_nobact.fasta
+
+
+##map HiFi to that genome
+
+
+conda activate pb-assembly
+
+BAM="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/Cbren_HiFi_nobact.bam"
+
+#samtools faidx Cbren_nobact.fasta
+#pbmm2 align --preset CCS --sort -j 16 Cbren_nobact.fasta  $HiFi $BAM
+
+#samtools view -@ 16 -F 1796 -q 20 -b $BAM | samtools sort -@ 8 -o ${BAM/.bam/.s.bam} -
+#samtools index ${BAM/.bam/.s.bam}
+
+#estimate the coverage
+module load bedtools
+#bedtools genomecov -ibam ${BAM/.bam/.s.bam} > Cbren_nobact_genomecov.bed
+
+
+#get only chr
+bd="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/BLOBSNOGAPS"
+#samtools faidx $nogaps -r $bd/LIST_OF_NEMATODA_CHR.txt -o Cbren_chr.fasta
+#get nonchr scaffolds
+#samtools faidx $nogaps -r $bd/LIST_OF_NEMATODA_NONCHR.txt -o Cbren_notchr.fasta
+
+#blast small scaff to chr
+#conda deactivate
+#conda activate blast
+
+
+
+####blast to the genome
+
+#makeblastdb -in Cbren_chr.fasta -parse_seqids  -dbtype nucl
+#blastn -db Cbren_chr.fasta \
+#      -query Cbren_notchr.fasta \
+#      -outfmt "6 qseqid staxids bitscore std" \
+#      -evalue 1e-25 \
+#      -num_threads 16 \
+#      -out Cbren.nochr_to_chr.blast.out
+
+
+
+#align to the genome
+conda activate pb-assembly
+
+pbmm2 align --preset CCS --sort -j 16 Cbren_chr.fasta  Cbren_notchr.fasta Cbren_notchr_to_chr.bam
+samtools index Cbren_notchr_to_chr.bam

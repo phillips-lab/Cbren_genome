@@ -1,0 +1,26 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=branches   ### Job Name
+#SBATCH --mem=10g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/splitmafs50k_NEW
+
+LISTFILES=($(ls -rt *.maf))
+
+rm C.brenneri_branches.txt
+
+for file in "${LISTFILES[@]}" ;do
+
+branch="$(awk -F'[:,)]' '/Cbren:[0-9\.]+,\(/{print $2} /Cbren[^,)]*,Csp48/{print $2+$6}' ${file/.maf/.combo.fasta}.treefile)"
+echo  "${file/.maf/} $branch" >> C.brenneri_branches.txt
+
+
+done

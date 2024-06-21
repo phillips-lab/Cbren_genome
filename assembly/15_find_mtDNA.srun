@@ -1,0 +1,33 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=mtDNA   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=20            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fasta"
+MitoHiFi="/projects/phillipslab/ateterina/scripts/MitoHiFi/mitohifi.py"
+OLDCbrenMT="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/mtDNA/NC_035244.1.fasta"
+OLDCbrenMTgb="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/mtDNA/NC_035244.1.gb"
+
+
+
+source ~/.bashrc
+conda activate mitohifi_env
+
+export PATH=/projects/phillipslab/ateterina/scripts/MitoFinder:${PATH}
+
+
+
+mkdir -p mtDNA
+cd mtDNA
+
+
+mkdir -p HiFi
+cd  HiFi
+python $MitoHiFi -r $HiFi -f $OLDCbrenMT -g $OLDCbrenMTgb -t 20 -o 5

@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=ortho   ### Job Name
+#SBATCH --mem=40g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref
+
+source ~/.bashrc
+conda activate genespace
+
+
+#copy all *_prot.fasta as Sp.fa to genespace_newref/tmp folder
+
+
+orthofinder -f /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/tmp/ -t 16 -a 1 -X -o /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/

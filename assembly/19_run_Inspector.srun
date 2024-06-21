@@ -1,0 +1,58 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips    ### Partition
+#SBATCH --job-name=inspector    ### Job Name
+#SBATCH --time=100:00:00        ### WallTime
+#SBATCH --mem=40G
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=1           ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=16           ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+#load the modules
+
+
+source ~/.bashrc
+conda activate ins
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+mkdir -p INSPECTOR
+
+cd INSPECTOR
+
+chr="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/REMOVECONT/Cbren_chr.fasta"
+
+
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq"
+FMLRCr="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FMLRC_correcter_PacBioreads/Cbren_pacbio_fmlrc_corected_final.fa"
+
+# Evaluate assembly with polished reads
+#inspector.py -c $chr -r $FMLRCr -o inspector_out_only_chr_cor_pacbio/ --datatype clr -t 16
+# Evaluate assembly with hifi reads
+#inspector.py -c $chr -r $HiFi -o inspector_out_only_chr_hifi/ --datatype hifi -t 16
+
+#only for HiFi
+#inspector-correct.py -i inspector_out_only_chr_hifi/ --datatype pacbio-hifi -o inspector_out_only_chr_hifi/ -t 16
+
+
+#final check!
+finchr="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/INSPECTOR/inspector_out_only_chr_hifi/contig_corrected.fa"
+
+
+inspector.py -c $finchr -r $HiFi -o FINAL_inspector_out_only_chr_hifi/ --datatype hifi -t 16
+inspector-correct.py -i FINAL_inspector_out_only_chr_hifi/ --datatype pacbio-hifi -o FINAL_inspector_out_only_chr_hifi/ -t 16
+
+
+#one lasst check if the second round improoved much
+
+fin2chr="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/INSPECTOR/FINAL_inspector_out_only_chr_hifi/contig_corrected.fa"
+
+
+inspector.py -c $fin2chr -r $HiFi -o FINAL2_inspector_out_only_chr_hifi/ --datatype hifi -t 16
+inspector.py -c $fin2chr -r $FMLRCr -o FINAL2_inspector_out_only_chr_cor_pacbio/ --datatype clr -t 16
+inspector-correct.py -i  FINAL2_inspector_out_only_chr_cor_pacbio/ --datatype pacbio-hifi -o  FINAL2_inspector_out_only_chr_cor_pacbio/ -t 16

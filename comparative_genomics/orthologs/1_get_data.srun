@@ -1,0 +1,108 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=prots   ### Job Name
+#SBATCH --mem=10g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23
+mkdir -p  prots
+cd prots
+
+#for C.brenneri, I used a protein file used in BUSCO analysis (Cbren_ann_longest.gff and Cbren_prot.fasta)
+
+
+#others:
+####get genomes + canonical gtf!
+#C. elegans PRJNA13758
+#C. brenneri this work
+#C. remanei PRJNA577507
+#C. inopinata PRJDB5687
+#C. briggsae PRJNA10731
+#C. nigoni PRJNA384657
+
+#C. tropicalis NIC58.genome.fa from  elife-62587-supp2.zip
+
+
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_elegans/PRJNA13758/caenorhabditis_elegans.PRJNA13758.WBPS18.genomic_softmasked.fa.gz
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_elegans/PRJNA13758/caenorhabditis_elegans.PRJNA13758.WBPS18.canonical_geneset.gtf.gz
+#gunzip caenorhabditis_elegans.PRJNA13758.WBPS18.genomic_softmasked.fa.gz
+#mv caenorhabditis_elegans.PRJNA13758.WBPS18.genomic_softmasked.fa Celeg_genome.fasta
+#gunzip caenorhabditis_elegans.PRJNA13758.WBPS18.canonical_geneset.gtf.gz
+#mv caenorhabditis_elegans.PRJNA13758.WBPS18.canonical_geneset.gtf Celeg_ann.gtf
+
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_remanei/PRJNA577507/caenorhabditis_remanei.PRJNA577507.WBPS18.genomic_softmasked.fa.gz
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_remanei/PRJNA577507/caenorhabditis_remanei.PRJNA577507.WBPS18.canonical_geneset.gtf.gz
+#gunzip caenorhabditis_remanei.PRJNA577507.WBPS18.genomic_softmasked.fa.gz
+#mv caenorhabditis_remanei.PRJNA577507.WBPS18.genomic_softmasked.fa Crema_genome.fasta
+#gunzip caenorhabditis_remanei.PRJNA577507.WBPS18.canonical_geneset.gtf.gz
+#mv caenorhabditis_remanei.PRJNA577507.WBPS18.canonical_geneset.gtf Crema_ann.gtf
+
+
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_inopinata/PRJDB5687/caenorhabditis_inopinata.PRJDB5687.WBPS18.genomic_softmasked.fa.gz
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_inopinata/PRJDB5687/caenorhabditis_inopinata.PRJDB5687.WBPS18.canonical_geneset.gtf.gz
+
+#gunzip caenorhabditis_inopinata.PRJDB5687.WBPS18.genomic_softmasked.fa.gz
+#mv caenorhabditis_inopinata.PRJDB5687.WBPS18.genomic_softmasked.fa Cinop_genome.fasta
+#gunzip caenorhabditis_inopinata.PRJDB5687.WBPS18.canonical_geneset.gtf.gz
+#mv caenorhabditis_inopinata.PRJDB5687.WBPS18.canonical_geneset.gtf Cinop_ann.gtf
+
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_briggsae/PRJNA10731/caenorhabditis_briggsae.PRJNA10731.WBPS18.genomic_softmasked.fa.gz
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_briggsae/PRJNA10731/caenorhabditis_briggsae.PRJNA10731.WBPS18.canonical_geneset.gtf.gz
+
+#gunzip caenorhabditis_briggsae.PRJNA10731.WBPS18.genomic_softmasked.fa.gz
+#mv caenorhabditis_briggsae.PRJNA10731.WBPS18.genomic_softmasked.fa Cbrig_genome.fasta
+
+#gunzip caenorhabditis_briggsae.PRJNA10731.WBPS18.canonical_geneset.gtf.gz
+#mv caenorhabditis_briggsae.PRJNA10731.WBPS18.canonical_geneset.gtf Cbrig_ann.gtf
+
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_nigoni/PRJNA384657/caenorhabditis_nigoni.PRJNA384657.WBPS18.genomic_softmasked.fa.gz
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_nigoni/PRJNA384657/caenorhabditis_nigoni.PRJNA384657.WBPS18.canonical_geneset.gtf.gz
+
+#gunzip caenorhabditis_nigoni.PRJNA384657.WBPS18.genomic_softmasked.fa.gz
+#mv caenorhabditis_nigoni.PRJNA384657.WBPS18.genomic_softmasked.fa Cnigo_genome.fasta
+#gunzip caenorhabditis_nigoni.PRJNA384657.WBPS18.canonical_geneset.gtf.gz
+
+
+
+
+
+
+
+
+#wget https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7853720/bin/elife-62587-supp2.zip
+#unzip elife-62587-supp2.zip
+
+mv NIC58.genome.fa Ctrop_genome.fasta
+mv NIC58.genome.fa.fai Ctrop_genome.fasta.fai
+mv NIC58.gff3 Ctrop_ann.gff
+
+
+#agat_sp_keep_longest_isoform.pl -f Ctrop_ann.gff -o Ctrop_ann.longest.gff;
+#agat_sp_extract_sequences.pl --gff Ctrop_ann.longest.gff -f Ctrop_genome.fasta -p -o Ctrop_prot.fasta
+
+
+
+gunzip *gz
+
+
+for sp in *_genome.fasta;do
+
+agat_sp_keep_longest_isoform.pl -f ${sp/_genome.fasta/_ann.gff} -o ${sp/_genome.fasta/_ann.longest.gff};
+agat_sp_extract_sequences.pl --gff ${sp/_genome.fasta/_ann.longest.gff} -f $sp -p -o ${sp/_genome.fasta/_prot.fasta};
+
+done

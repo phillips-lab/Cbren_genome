@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=topol   ### Job Name
+#SBATCH --mem=10g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/splitmafs50k_NEW
+
+
+#get trees and tree topoloogies
+
+
+LISTFILES=($(ls -rt *.maf))
+
+
+for file in "${LISTFILES[@]}" ;do
+
+topol="$(sed -E "s/:[0-9\.]+//g"  ${file/.maf/.combo.fasta}.treefile)"
+echo  "${file/.maf/} $topol" >> C.brenneri_topol.txt
+
+
+tre="$(cat  ${file/.maf/.combo.fasta}.treefile)"
+echo  "${file/.maf/} $tre" >> C.brenneri_trees.txt
+
+done
+
+
+sed -i "s/-/ /g" C.brenneri_topol.txt
+sed -i "s/\./ /g" C.brenneri_topol.txt

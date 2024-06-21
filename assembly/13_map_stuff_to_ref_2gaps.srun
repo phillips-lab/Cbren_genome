@@ -1,0 +1,66 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=remap   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=20            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+LRTGSLR="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_GapCloser_after_LR_TGS_PacBioreads/PacBio_closed_gaps/iteration-3/gapclosed.fasta"
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fasta"
+FMLRCr="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FMLRC_correcter_PacBioreads/Cbren_pacbio_fmlrc_corected_final.fa"
+SGAass5k="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/SGA_assembly_5kb.fa"
+#it's an old name of the strain:)
+HiFiass="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/hifiasm/VX0223.asm.run1.hic.p_ctg.fasta"
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/
+
+source ~/.bashrc
+conda activate pb-assembly
+
+
+
+mkdir -p MAPPING_STUFF_2gaps
+cd MAPPING_STUFF_2gaps
+
+
+
+#samtools faidx $LRTGSLR
+
+############################
+###map HiFi reads
+
+#pbmm2 index $LRTGSLR /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_GapCloser_after_LR_TGS_PacBioreads/PacBio_closed_gaps/iteration-3/gapclosed.mmi
+#pbmm2 align --preset CCS --sort -j 20 $LRTGSLR  $HiFi hifi_cbrenALL_2gaps.bam
+#samtools view -@ 20 -F 1796 -q 20 -b hifi_cbrenALL_2gaps.bam | samtools sort -@ 20 -o hifi_cbrenALL_2gaps.s.bam -
+#samtools index hifi_cbrenALL_2gaps.s.bam
+
+###map corrected pacbio reads
+
+#pbmm2 align --preset CCS --sort -j 20 $LRTGSLR  $FMLRCr pacbio-fmlrc_cbrenALL_2gaps.bam
+#samtools view -@ 20 -F 1796 -q 20 -b pacbio-fmlrc_cbrenALL_2gaps.bam | samtools sort -@ 20 -o pacbio-fmlrc_cbrenALL_2gaps.s.bam -
+#samtools index pacbio-fmlrc_cbrenALL_2gaps.s.bam
+
+
+###map SGA assembly
+
+#pbmm2 align --preset CCS --sort -j 20 $LRTGSLR  $SGAass5k sga_cbrenALL_2gaps.bam
+#samtools view -@ 20 -F 1796 -q 20 -b sga_cbrenALL_2gaps.bam | samtools sort -@ 20 -o sga_cbrenALL_2gaps.s.bam -
+#samtools index sga_cbrenALL_2gaps.s.bam
+
+
+
+
+
+###map the individual HIFIASM assembly
+pbmm2 align --preset CCS --sort -j 20 $LRTGSLR  $HiFiass hifiasm_cbrenALL_2gaps.bam
+
+samtools view -@ 20 -F 1796 -q 20 -b hifiasm_cbrenALL_2gaps.bam | samtools sort -@ 20 -o hifiasm_cbrenALL_2gaps.s.bam -
+samtools index hifiasm_cbrenALL_2gaps.s.bam

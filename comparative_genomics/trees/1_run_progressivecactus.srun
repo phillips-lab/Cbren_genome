@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=cactus   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=10            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+#########################################################
+#Genomic data:
+#C. doughertyi, C. wallacei  and other C. sps are from Caenorhabditis v.2 http://download.caenorhabditis.org/v2/genome_files/
+#C. tropicalis, and C. elegans  from WormBase ParaSite Home Version: WBPS16 (WS279)
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes
+
+
+cactusdir='/projects/phillipslab/ateterina/scripts/progressiveCactus/bin'
+workdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/genomes"
+
+
+$cactusdir/runProgressiveCactus.sh --maxThreads 10 --overwrite Cbren.seqfile_NEW_10seq.txt $workdir/cactus_out_NEW_10gen c.bren.cactus.NEW.10gen

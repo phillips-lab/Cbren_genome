@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=stat   ### Job Name
+#SBATCH --mem=240g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+dir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/Results_Oct28/Orthogroups"
+
+cd $dir
+
+
+
+
+#all genes that have orthpgroups + species specific
+species_names=("Cbren" "Cbrig" "Celeg" "Cinop" "Cnigo" "Crema" "Ctrop")
+
+for ((species=0; species<=6; species++));do
+      # Get the column index corresponding to the species ID
+        column=$((species + 1))
+        species_name="${species_names[species-1]}"
+        cat Orthogroups.tsv| cut  -f"$column" | tr ',' '\n' |sed -e '1d' -e '/^[[:space:]]*$/d' -e 's/ //g' - > "${species_name}_justall_genes.txt"
+        grep -f Orthogroups_SingleCopyOrthologues.txt Orthogroups.tsv |cut -f"$column"  > "${species_name}_1-to-1_genes.txt"
+
+done

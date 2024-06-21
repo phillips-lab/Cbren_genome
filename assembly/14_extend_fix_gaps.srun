@@ -1,0 +1,67 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=HapSolo   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=10            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_GapCloser_after_LR_TGS_PacBioreads/PacBio_closed_gaps/iteration-3
+#fix 2 gaps
+
+#1 select only 2 scaffolds
+
+module load bedtools
+
+#cat SELECT_1_and_2.bed
+#HiC_scaffold_1	1	27998167
+#HiC_scaffold_2	1	24529668
+
+
+#bedtools getfasta -fi gapclosed.fasta -bed SELECT_1_and_2.bed -fo scaf1_and_scaf2.fasta
+
+#mask extra regions around the gaps (based on coverage by hifi, hifiasm, sgA, PACBIO+FMLRC)
+#HiC_scaffold_1 26673160    26700601
+#HiC_scaffold_2 22242000    22253451
+
+#sed -i 's/HiC_scaffold_1:1-27998167/HiC_scaffold_1/' scaf1_and_scaf2.fasta
+#sed -i 's/HiC_scaffold_2:1-24529668/HiC_scaffold_2/' scaf1_and_scaf2.fasta
+
+
+
+#cat MASK_for_GAPS_small.bed
+#HiC_scaffold_1	26673474	26675194
+#HiC_scaffold_2	22244451	22250354
+
+#bedtools maskfasta -fi scaf1_and_scaf2.fasta -bed MASK_for_GAPS_small.bed -fo scaf1_and_scaf2_masked_small.fasta
+
+
+
+
+
+lrgapcloser="/projects/phillipslab/ateterina/scripts/LR_Gapcloser/src/LR_Gapcloser.sh"
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fasta"
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_scaf1_and_scaf2
+sc12s="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_GapCloser_after_LR_TGS_PacBioreads/PacBio_closed_gaps/iteration-3/scaf1_and_scaf2_masked_small.fasta"
+
+
+bash $lrgapcloser -i $sc12s -l $FMLRCr -s p -t 20 -r 3 -c 0.5 -a 0.4 -m 400 -o HiFi_scaf1_and_scaf2_small-mask_closed_gaps_cov0.3
+
+
+############################
+## combine all scaffolds
+
+
+mkdir -p /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/EXTEND_TERMINI
+cd EXTEND_TERMINI
+
+#cat /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_scaf1_and_scaf2/HiFi_scaf1_and_scaf2_small-mask_closed_gaps_cov0.3/iteration-2/gapclosed.fasta > Cbren_gapless_genome.fasta
+
+#tail -n562 /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_GapCloser_after_LR_TGS_PacBioreads/PacBio_closed_gaps/iteration-3/gapclosed.fasta >> Cbren_gapless_genome.fasta

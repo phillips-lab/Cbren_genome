@@ -1,0 +1,54 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=remap   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=20            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/
+
+source ~/.bashrc
+conda activate pb-assembly
+
+
+fixedmisas="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/EXTEND_TERMINI/Cbren_gapless_genome.fasta.scaffolds.fa"
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fasta"
+FMLRCr="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FMLRC_correcter_PacBioreads/Cbren_pacbio_fmlrc_corected_final.fa"
+
+
+mkdir -p MAPPING_STUFF_nogaps
+cd MAPPING_STUFF_nogaps
+
+
+#with 1 cpu
+#samtools faidx $fixedmisas
+#pbmm2 index $fixedmisas ${fixedmisas/scaffolds.fa/scaffolds.mmi}
+
+
+#pbmm2 align --preset CCS --sort -j 20 $fixedmisas  $HiFi hifi_cbrenALL_0gaps.bam
+
+#samtools view -@ 20 -F 1796 -q 20 -b hifi_cbrenALL_0gaps.bam | samtools sort -@ 20 -o hifi_cbrenALL_0gaps.s.bam -
+#samtools index hifi_cbrenALL_0gaps.s.bam
+
+
+#pbmm2 align --preset CCS --sort -j 20 $fixedmisas  $FMLRCr pacbio-fmlrc_cbrenALL_0gaps.bam
+
+#samtools view -@ 20 -F 1796 -q 20 -b pacbio-fmlrc_cbrenALL_0gaps.bam | samtools sort -@ 20 -o pacbio-fmlrc_cbrenALL_0gaps.s.bam -
+#samtools index pacbio-fmlrc_cbrenALL_0gaps.s.bam
+
+module load bedtools
+
+samtools depth -a hifi_cbrenALL_0gaps.s.bam | awk '{ if ($3==0) {print $1"\t"$2-1"\t"$2}}' - | bedtools merge -i - -d 100 > hifi_cbrenALL_0gaps.not_covered.bed
+
+
+samtools depth -a pacbio-fmlrc_cbrenALL_0gaps.s.bam | awk '{ if ($3==0) {print $1"\t"$2-1"\t"$2}}' - | bedtools merge -i - -d 100 > pacbio-fmlrc_cbrenALL_0gaps.not_covered.bed
+
+
+
+bedtools intersect -a hifi_cbrenALL_0gaps.not_covered.bed -b pacbio-fmlrc_cbrenALL_0gaps.not_covered.bed > regions_not_covered_by_hifi_and_pacbio.bed

@@ -1,0 +1,53 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=genepainter   ### Job Name
+#SBATCH --mem=20g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0          ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate genepainter
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ORTHO
+
+mkdir -p SUBSET
+shuf -n 30 -e ./*fa |xargs -I {} cp {} SUBSET/
+
+cd SUBSET
+
+for i in *[0-9].fa;
+do
+awk '/^>/{if (seq) print seq; printf "%s\n",$0; seq=""; next} {seq = seq $0} END {if (seq) print seq}' $i > ${i/.fa/.TMP.fa}
+
+
+ done
+
+ for i in *TMP.fa;do
+
+        for k in 11 12 9 10 3 4 1 2 13 14 5 6 7 8; do
+            sed -n "${k}p"  $i >> ${i/TMP.fa/OK.fa};
+        done
+done
+
+
+rm *[0-9].fa
+rm *TMP.fa
+
+
+outdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ALLGFF2"
+gpdir="/projects/phillipslab/ateterina/scripts/genepainter/gene_painter"
+
+
+for file in *OK.fa;do
+    mafft $file > ${file/fa/.ali.fasta}
+    ruby $gpdir/gene_painter.rb -i ${file/fa/.ali.fasta} -p $outdir -o ${file/fa/.genepainter} --phylo --svg --statistics
+done

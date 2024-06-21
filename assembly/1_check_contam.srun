@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=bbmap    ### Job Name
+#SBATCH --mem=40g
+#SBATCH --time=100:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+#module load bbmap/38.16
+#module load java
+
+removesmartbell.sh split=t in=2smrt_pb.fasta out=2smrt_pb_noadapters.fasta threads=40
+
+
+## a script by from Erich Schwarz <ems394@cornell.edu> available at https://github.com/PacificBiosciences/FALCON/issues/251
+./falcon_name_fasta.pl.txt -i 2smrt_pb_noadapters.fasta -o 2smrt_pb_noadapters_names.fasta -p cbren_preassembled_2smrt
+
+#reformat.sh in=2smrt_pb_noadapters_names.fasta out=2smrt_pb_noadapters_names.fastq threads=40 qfake=35

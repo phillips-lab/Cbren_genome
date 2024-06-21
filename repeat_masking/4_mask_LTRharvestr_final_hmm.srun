@@ -1,0 +1,43 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=LTRharvestr    ### Job Name
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --mail-type=ALL              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+module load easybuild  GCC/6.3.0-2.27  OpenMPI/2.0.2 RepeatMasker/4.0.7 RepeatModeler/1.0.11
+
+#cd LTR_final_hmm;
+
+LISTFILES=(Cbren.genome.fasta)
+
+file=${LISTFILES[$SLURM_ARRAY_TASK_ID]}
+
+gt="/projects/phillipslab/ateterina/scripts/genometools/bin/gt";
+echo $file;
+#http://avrilomics.blogspot.com/2015/09/ltrharvest.html
+
+
+
+#step1
+$gt suffixerator -db $file -indexname $file -tis -suf -lcp -des -ssp -sds -dna
+$gt ltrharvest -index $file -seqids yes -tabout no > ltrharvest.out
+
+$gt ltrharvest -index $file -gff3 genome.fa.ltr.gff -out genome.fa.ltr.fa
+$gt gff3 -sort genome.fa.ltr.gff > genome.fa.ltr.s.gff
+module load hmmer/3.1b2
+$gt ltrdigest -hmms /projects/phillipslab/ateterina/CR_ann/repeats/hmms/hmm_DB/*hmm -outfileprefix Cbren_ltrdigest genome.fa.ltr.s.gff $file >Cbren_ltrdigest_output_gff
+
+
+
+filter="/projects/phillipslab/ateterina/CR_ann/repeats/filter_protein_match.lua"
+
+$gt select -rule_files $filter -- < Cbren_ltrdigest_output_gff > Cbren_ltrdigest_output_gff2
+
+perl -w /projects/phillipslab/ateterina/CR_ann/repeats/get_ltr_retrotransposon_seqs.pl genome.fa.ltr.fa Cbren_ltrdigest_output_gff2 > Cbren_ltrdigest_output_gff2.fa

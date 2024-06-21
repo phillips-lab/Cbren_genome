@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=100g
+#SBATCH --job-name=brakerR    ### Job Name
+#SBATCH --time=4:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=24            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+#no#conda activate braker
+
+gendir="/projects/phillipslab/ateterina/Cbren/final_repeats"
+ref="Cbren.genome.softmasked.fasta"
+
+wdir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+
+
+module load braker samtools bamtools  augustus/3.3
+module load genemark/4.71
+
+
+mkdir -p braker_tmp
+
+
+
+#FINAL RNA_SEQ!
+#cd Cbren_2pass
+#samtools view -F 4 -@ 24 -bS -q 20 Aligned.out.sam  | samtools sort -@ 24 -o Cbren_RNA2pass.s.bam -
+#samtools index Cbren_RNA2pass.s.bam
+#cd ..
+
+
+
+braker.pl --species=Cbrenfin.rna --genome=$gendir/$ref --softmasking 1 --cores 24 --bam=Cbren_2pass/Cbren_RNA2pass.s.bam  --workingdir="/projects/phillipslab/ateterina/Cbren/final_annotation/braker_tmp" --AUGUSTUS_CONFIG_PATH="/projects/phillipslab/shared/BUSCO/AUGUSTUS/config" 2> $wdir/braker_rna.log

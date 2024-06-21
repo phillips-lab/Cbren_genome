@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=prep   ### Job Name
+#SBATCH --mem=40g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+
+odir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/bed"
+
+species_names=("Cbren" "Cbrig" "Celeg" "Cinop" "Cnigo" "Crema" "Ctrop")
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/Results_Oct28/Orthogroups
+
+for ((species=1; species<=7; species++));do
+
+       sname="${species_names[species-1]}"
+       ann="$fdir/${sname}_ann.longest.gff"
+       echo $sname;
+       grep -P "\tmRNA\t|\ttranscript\t" ${sname}_ann.longest.gff | awk '{print $1"\t"$4"\t"$5"\t"$9;}' - |sed -E "s/ID=(.*)\;Parent=.*/\1/g" - > $odir/${sname}.bed
+
+done
+
+
+
+##grep -P "\tmRNA\t" /projects/phillipslab/ateterina/Cbren/final_annotation/VALIDATION/BUSCO_old_new_genome/Cbren_final_longest_nomt.gff3 | awk '{print $1"\t"$4"\t"$5"\t"$9;}' - |sed -E "s/ID=(.*)\;Parent=.*/\1/g" - > $odir/Cbren.bed

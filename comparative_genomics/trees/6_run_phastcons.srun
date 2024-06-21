@@ -1,0 +1,74 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=phastcons   ### Job Name
+#SBATCH --mem=150g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-5           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+source ~/.bashrc
+conda activate phast
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes
+workdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/genomes"
+
+
+mkdir -p  phastcons
+cd phastcons
+
+
+#initial model (Cbren.phyloFit.mod) on all chr
+#phyloFit --tree "(((((Cbren,Csp48),(Csp44,Csp51)),(Cdoug,(Ctrop,Cwall))),Crema),Celeg,Csp54)" --out-root Cbren.phyloFit --msa-format MAF c.bren.cactus.NEW.10gen.ok.maf
+
+
+
+chrms=(I II III IV V X)
+chr=${chrms[$SLURM_ARRAY_TASK_ID]}
+
+
+hal2maf $workdir/c.bren.cactus.NEW.10gen c.bren.cactus.NEW.10gen.chr.${chr}.maf --refGenome Cbren --noAncestors --refSequence $chr --noDupes --onlyOrthologs
+
+
+#2nd training
+phastCons --estimate-trees ${chr}.tree --msa-format MAF c.bren.cactus.NEW.10gen.chr.${chr}.maf \
+			Cbren.phyloFit.mod --no-post-probs
+
+
+
+
+
+
+mafs="/projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/splitmafs50k_NEW"
+phastconsdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/phastcons"
+
+
+cd $mafs
+
+rm -f $phastconsdir/${chr}.mean.wig
+
+#estimate mean score for each 50kb
+
+for MAF in ${chr}*[0-9].maf;do
+	sed -e 2d $MAF > ${MAF/maf/ok.MAF}
+
+	phastCons --score \
+	    --msa-format MAF ${MAF/maf/ok.MAF} \
+		    $phastconsdir/${chr}.tree.cons.mod,$phastconsdir/${chr}.tree.noncons.mod > $phastconsdir/${MAF/maf/wig};
+
+
+	SCORE=$(sed -e 1d $phastconsdir/${MAF/maf/wig} | awk '{ sum += $1 } END { if (NR > 0) print sum / NR }' - )
+
+	echo ${MAF/.maf/} $SCORE >> $phastconsdir/${chr}.mean.wig
+
+
+done
+
+
+#for i in I II III IV V X;do cat ${i}.mean.wig >> Cbren_combo_phastcons_50kb.wig; done

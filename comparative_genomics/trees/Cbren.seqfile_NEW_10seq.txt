@@ -1,0 +1,11 @@
+((Crema,(((Csp44,Csp51),(Cbren,Csp48)),((Cwall,Ctrop),Cdoug)),Csp54),Celeg);
+*Cbren /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/Cbren_soft_masked_IVrev.fasta
+Cdoug /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/CDOUG.caenorhabditis_doughertyi_JU1771_v2.scaffolds.fasta
+Celeg /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/c_elegans.PRJNA13758.WS288.genomic_softmasked.fasta
+Crema /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/c_remanei.PRJNA577507.WS288.genomic_softmasked.fasta
+Csp44 /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/CSP44.caenorhabditis_sp44_BRC20300_v2.scaffolds.fasta
+Csp48 /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/CSP48.caenorhabditis_sp48_BRC20454_v2.scaffolds.fasta
+Csp51 /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/CSP51.caenorhabditis_sp51_QG2939_v2.scaffolds.fasta
+Csp54 /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/CSP54.caenorhabditis_sp54_BRC20483_v2.scaffolds.fasta
+Ctrop /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/c_tropicalis.PRJNA53597.WS288.genomic_softmasked.fasta
+Cwall /projects/phillipslab/ateterina/Cbren/phylogenomics/genomes/CWALL.caenorhabditis_wallacei_JU1898_v2.scaffolds.fasta

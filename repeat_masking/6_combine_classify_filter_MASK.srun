@@ -1,0 +1,93 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=clust_repeats    ### Job Name
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0          ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=10            ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+#########################
+########combine masks####
+
+#mv CB-families.fa Cbren_RM-families.fa
+#copy Cel_anc_repbase_aut_nonaut_simple.fasta
+#cat Cbren_RM-families.fa transposones_PSI_Cbren_50bp.fasta tRNA_Cbren.fasta Cbren.detectMITE.out.txt Cbren_ltrdigest_output_gff2.fa Cel_anc_repbase_aut_nonaut_simple.fasta Rhabditida.repeatmasker > COMBO_repeats_unclass.fasta
+
+
+##############################
+#########cluster 80%##########
+
+#module load usearch/8.0
+#usearch -cluster_fast COMBO_repeats_unclass.fasta -id 0.8 -centroids COMBO_rep_centroids.fasta -uc clusters.uc -consout repeats_clust_80_unclass.fasta -msaout clust_aligned_80.fasta
+
+
+###########################
+########classify###########
+
+##split fasta to several parts
+#mkdir CLUST80
+#perl /projects/phillipslab/ateterina/scripts/fasta-splitter.pl --n-parts 40 --line-length 0 --out-dir CLUST80 --nopad --measure count repeats_clust_80_unclass.fasta
+
+
+module load easybuild  GCC/6.3.0-2.27  OpenMPI/2.0.2 RepeatMasker/4.0.7 RepeatModeler/1.0.11
+
+#cd CLUST80;
+
+#LISTFILES=(*.fasta)
+#   file=${LISTFILES[$SLURM_ARRAY_TASK_ID]}
+#   mkdir ${file/.fasta/};
+#   cd ${file/.fasta/};
+#   RepeatClassifier -consensi ../$file -engine ncbi
+
+
+#cd ..;
+
+
+#cd CLUST80;
+#
+#for i in repeats_clust_80_unclass.part-{1..40}.fasta.classified;do
+#       cat $i >>repeats_clust_80_unclass.COMBO.class.fasta;
+#done
+
+
+#################proteins
+#wget ftp://ftp.wormbase.org/pub/wormbase//species/c_brenneri//sequence/protein/c_brenneri.PRJNA20035.WS285.protein.fa.gz
+#gunzip c_brenneri.PRJNA20035.WS285.protein.fa.gz
+module load blast/2.2.29+
+
+cd ..
+
+makeblastdb -in c_brenneri.PRJNA20035.WS285.protein.fa -parse_seqids -dbtype prot
+blastx -db c_brenneri.PRJNA20035.WS285.protein.fa -num_threads 24 -outfmt 6 -query CLUST80/repeats_clust_80_unclass.COMBO.class.fasta -out BLAST_clust80_Cbren_WORMBASE.res.txt -evalue 0.001;
+
+
+##################filter
+#no_unknown! + prot
+grep "Unknown" BLAST_clust80_Cbren_WORMBASE.res.txt | cut -f1 - |sort | uniq > LIST_EXCLUDE.txt
+
+grep ">" CLUST80/repeats_clust_80_unclass.COMBO.class.fasta | grep -v -f LIST_EXCLUDE.txt  - |sed -e 's/>//g' - >Repeats_Lib_list.txt
+
+perl -ne 'if(/^>(.*)/){$c=$i{$1}}$c?print:chomp;$i{$_}=1 if @ARGV' Repeats_Lib_list.txt CLUST80/repeats_clust_80_unclass.COMBO.class.fasta > repeats_clust_80_unclass.COMBO.filt.fasta
+##################final repeat masking
+
+module load easybuild  GCC/6.3.0-2.27  OpenMPI/2.0.2 RepeatMasker/4.0.7 RepeatModeler/1.0.11
+
+#Hard masking:
+
+file="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.fasta"
+
+mkdir masked_ref_fin_caenor_SOFT
+cd masked_ref_fin_caenor_SOFT;
+RepeatMasker -s -species caenorhabditis -xsmall -gff -pa 10 $file
+RepeatMasker -s -lib ../repeats_clust_80_unclass.COMBO.filt.fasta -xsmall -gff -pa 10 ${file}.masked
+
+#
+cp Cbren.genome.fasta.masked.masked Cbren.genome.softmasked.fasta
+cat Cbren.genome.softmasked.fasta | tr "atgc" "N" > Cbren.genome.hardmasked.fasta
+sed -i "s/MNDNA/MtDNA/" Cbren.genome.hardmasked.fasta

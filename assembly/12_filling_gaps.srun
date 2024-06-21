@@ -1,0 +1,48 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=gaps   ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=20            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+lrgapcloser="/projects/phillipslab/ateterina/scripts/LR_Gapcloser/src/LR_Gapcloser.sh"
+tgs="/projects/phillipslab/ateterina/scripts/TGS-GapCloser/tgsgapcloser"
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fasta"
+refpol="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/Cbren.ALL.polished_hifi.fasta"
+
+
+
+###first round
+
+#mkdir -p LR_GAPCLOSER
+#cd LR_GAPCLOSER
+#bash $lrgapcloser -i $refpol -l $HiFi -s p -t 20 -o HiFi_closed_gaps
+
+
+
+
+###second round
+lrres="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/LR_GAPCLOSER/HiFi_closed_gaps/iteration-3/gapclosed.fasta"
+
+#mkdir -p TGS_GapCloser_after_LR
+#cd TGS_GapCloser_after_LR
+#$tgs --scaff $lrres --reads $HiFi --ne --thread 20 --output TGS_affter_LR_with_HiFi_closed_gaps --tgstype pb --min_idy 0.3 ### now only 7 gapss!!!
+
+
+
+
+
+lrTGSres="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/TGS_GapCloser_after_LR/TGS_affter_LR_with_HiFi_closed_gaps.scaff_seqs.oneliner.fasta"
+
+
+
+###final, that will give 2 gaps, that we'lll fix later
+mkdir -p LR_GapCloser_after_LR_TGS_PacBioreads
+cd LR_GapCloser_after_LR_TGS_PacBioreads
+bash $lrgapcloser -i $lrTGSres -l $PacBioreads -s p -t 20 -o PacBio_closed_gaps ### WOW!!!

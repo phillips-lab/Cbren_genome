@@ -1,0 +1,42 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=isoseq    ### Job Name
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --mail-type=FAIL,END              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=24            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+barcodes="/projects/phillipslab/ateterina/Cbren/isoseq/primer_1pair.fasta"
+genome="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.fasta"
+
+
+source ~/.bashrc
+conda activate isoseq3_2023
+
+#combine 2 smrt
+#bamtools merge -in m54198_181115_015648.subreads.bam -in m54198_181115_221335.subreads.bam -out 2smrt_cells.Cbren.subreads.bam
+#pbindex 2smrt_cells.Cbren.subreads.bam
+
+subreads="2smrt_cells.Cbren.subreads.bam"
+
+
+
+#1.consensus
+#ccs $subreads ${subreads/subreads./ccs.} --min-rq 0.9 -j 24
+
+#lima ${subreads/subreads./ccs.} $barcodes ${subreads/subreads./fl.} --isoseq --peek-guess
+
+#isoseq3 refine ${subreads/subreads.bam/fl.}consensusreadset.xml $barcodes ${subreads/subreads.bam/flnc.bam}
+
+#isoseq3 cluster ${subreads/subreads.bam/flnc.bam} ${subreads/subreads.bam/clustered.bam} --verbose --use-qvs
+
+pbmm2 align --preset ISOSEQ --sort ${subreads/subreads.bam/clustered.bam} $genome ${subreads/subreads.bam/mapped.bam}
+
+isoseq3 collapse --min-aln-coverage 0.75 --min-aln-identity 0.75  ${subreads/subreads.bam/mapped.bam} ${subreads/subreads.bam/relaxFilter.75_collapsed.gff}

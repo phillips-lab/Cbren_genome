@@ -1,0 +1,25 @@
+#######################
+###run FALCON
+#######################
+
+module load anaconda2
+nohup ./run_fc_scrip.sh &> run_fc.step.X.log &
+
+#cat input.fofn
+#2smrt_pb_noadapters_names.fasta
+
+
+#see configs in the folder
+run_fc_scrips.sh:
+
+--------
+#!/bin/bash
+#for step1,
+#fc_run fc_run_filt.conf
+
+#step2
+#fc_unzip.py fc_unzip.conf
+
+#step3
+#fc_phase.py fc_phase.conf
+------

@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=filt_CB    ### Job Name
+#SBATCH --time=00:240:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=10            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+#module load easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132
+#module load skewer
+
+
+skewer -x CTGTCTCTTATA -t 10 -l 36 -r 0.01 -d 0.01 -q 20 -o Hi-C_S113_L008.filt Hi-C_S113_L008_R1_001.fastq Hi-C_S113_L008_R2_001.fastq
+
+#then rename them to copy it to /projects/phillipslab/ateterina/Cbren/assembly/3D_ASSEMBLY2/splits as
+#Hi-C_S113_L008.filt_R1.fastq
+#Hi-C_S113_L008.filt_R2.fastq

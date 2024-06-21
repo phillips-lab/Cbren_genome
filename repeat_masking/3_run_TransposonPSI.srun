@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=TrpPSI    ### Job Name
+#SBATCH --time=60:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+module load transposonpsi
+
+
+
+genome="Cbren.genome.fasta"
+
+
+transposonPSI.pl $genome nuc
+
+
+./transposonpsi_2fasta.pl $genome $genome.TPSI.allHits.chains.bestPerLocus
+awk 'BEGIN {RS = ">" ; ORS = ""} length($2) >= 50 {print ">"$0}' Cbren.genome.fasta.TPSI.allHits.chains.bestPerLocus.fa > transposones_PSI_Cbren_50bp.fasta

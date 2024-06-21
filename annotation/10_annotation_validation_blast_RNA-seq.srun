@@ -1,0 +1,123 @@
+#!/bin/bash
+
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=40G
+#SBATCH --job-name=validation    ### Job Name
+#SBATCH --time=520:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16           ### Number of CPU
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+dir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+ref="/projects/phillipslab/ateterina/Cbren/final_repeats/Cbren.genome.softmasked.fasta"
+#gffPASA="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.gff3"
+ann="$dir/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.gff3"
+
+
+cd $dir/VALIDATION
+
+
+##################################################
+##reverse chr IV (after preliminary analysis with genespace)
+
+
+#head -n995927 $ref> Cbren_soft_masked_IVrev.fasta
+
+#sed -n "995928,1486551p" $ref | tr -d "\n" | rev | tr "ATGCatgc" "TACGtacg" |fold -w 50 - >> Cbren_soft_masked_IVrev.fasta
+
+#sed -n '1486552,$p' $ref >> Cbren_soft_masked_IVrev.fasta
+
+
+
+
+
+ref="$dir/VALIDATION/Cbren_soft_masked_IVrev.fasta"
+
+###################################################
+#1. STAR + htseq
+
+
+#module load easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132 STAR/2.5.3a
+
+
+#mkdir -p Cbren_star_ref_val
+#it should be gtf file to to the quant mode!
+#source ~/.bashrc
+#conda activate agatenv
+#export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+#agat_convert_sp_gff2gtf.pl --gff $ann -o ${ann/.gff3/.gtf}
+
+
+module load easybuild  icc/2017.1.132-GCC-6.3.0-2.27  impi/2017.1.132 STAR/2.5.3a
+mkdir -p Cbren_star_ref_val2
+STAR --runThreadN 32 --runMode genomeGenerate --genomeDir ./Cbren_star_ref_val2 --genomeFastaFiles $ref --sjdbGTFfile ${ann/.gff3/.gtf} --sjdbGTFtagExonParentTranscript Parent --sjdbOverhang 80
+
+mkdir -p Cbren_1pass_val2
+cd Cbren_1pass_val2
+
+STAR --genomeDir $dir/VALIDATION/Cbren_star_ref_val2 --readFilesIn $dir/Cbren_RNA_trim.R1.fastq $dir/Cbren_RNA_trim.R2.fastq --runThreadN 32 --quantMode GeneCounts --outSAMtype BAM SortedByCoordinate --limitBAMsortRAM 8202543902
+
+
+
+
+
+
+
+
+###################################################
+#2. blastp
+#extract prots
+#source ~/.bashrc
+#conda activate agatenv
+#export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+#agat_sp_keep_longest_isoform.pl --gff $ann -o ${ann/.gff3/.longest.gff3}
+#rm ${ann/.gff3/}_longest_prot.fasta
+#agat_sp_extract_sequences.pl --gff ${ann/.gff3/.longest.gff3} -f $ref -p -o ${ann/.gff3/}_longest_prot.fasta
+
+
+####blast to the combo prots used in the annotation
+#module load easybuild ifort/2017.1.132-GCC-6.3.0-2.27 impi/2017.1.132 NCBI-Toolkit/18.0.0
+
+#mkdir -p blastp_val
+#cd blastp_val
+
+#makeblastdb -in $dir/COMBO_prots.fa -dbtype prot -title ComboNemProt -parse_seqids -out ./ComboNemProt
+
+
+
+
+#blastp -db ComboNemProt -out Cbren_BAD_NAMES_longest_prot_balstp_comboprot.out -query ${ann/.gff3/}_longest_prot.fasta -evalue 1e-25 -outfmt 6 -num_threads 16
+
+
+
+###################################################
+
+###################################################
+# filter genes that overlap with repeats or unmask the genes
+
+
+cat $ref | tr 'atgc' 'N' > Cbren_soft_masked_IVrev_hard_masked.fa
+
+maskedranges="/projects/phillipslab/ateterina/scripts/generate_masked_ranges.py"
+
+python2 $maskedranges Cbren_soft_masked_IVrev_hard_masked.fa > Cbren_soft_masked_IVrev_hard_masked.bed
+
+module load bedtools
+annl="/projects/phillipslab/ateterina/Cbren/final_annotation/PASA/Cbren_pasa.db.gene_structures_post_PASA_updates.111310.output.FINAL_BADNAMES.longest.gff3"
+
+grep -P "\texon\t" $annl > Cbren_FINAL_BADNAMES_exons.gff3
+awk '{print$1"\t"$4-1"\t"$5-1"\t"$9}' Cbren_FINAL_BADNAMES_exons.gff3 |sed -E "s/ID=.*Parent=//g" - > Cbren_FINAL_BADNAMES_exons.genenames.bed
+bedtools intersect -a Cbren_FINAL_BADNAMES_exons.genenames.bed -b Cbren_soft_masked_IVrev_hard_masked.bed -wa -f 0.75 > Cbren_FINAL_BADNAMES_exons.genenames.0.75_overlap_repeats.bed
+
+cut -f4 Cbren_FINAL_BADNAMES_exons.genenames.0.75_overlap_repeats.bed |uniq |wc -l
+#146
+
+cut -f4 Cbren_FINAL_BADNAMES_exons.genenames.0.75_overlap_repeats.bed |uniq >Cbren_remove_these_genes_0.75_overlap_with_repeats.txt

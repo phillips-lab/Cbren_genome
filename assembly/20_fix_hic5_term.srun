@@ -1,0 +1,43 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips    ### Partition
+#SBATCH --job-name=scaf5    ### Job Name
+#SBATCH --time=100:00:00        ### WallTime
+#SBATCH --mem=40G
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=1           ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=16           ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+mkdir -p FIXscaf5
+
+cd FIXscaf5
+
+fin2chr="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/INSPECTOR/FINAL2_inspector_out_only_chr_hifi/valid_contig.fa"
+mask="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/INSPECTOR/FINAL2_inspector_out_only_chr_hifi/mask_hic_scaf_5_right_end.bed"
+module load bedtools
+
+#mask region around the gap
+bedtools maskfasta -fi $fin2chr -bed $mask -fo Cbren_6chr_maskedscaf5.fa
+
+
+
+source ~/.bashrc
+conda activate pb-assembly
+
+lrgapcloser="/projects/phillipslab/ateterina/scripts/LR_Gapcloser/src/LR_Gapcloser.sh"
+
+
+mkdir -p LR_fix_scaf_5
+cd LR_fix_scaf_5
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq"
+HiFia="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fasta"
+
+bash $lrgapcloser -i /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/FIXscaf5/Cbren_6chr_maskedscaf5.fa -l $HiFia -s p -t 20 -o scaf5_closed_gaps

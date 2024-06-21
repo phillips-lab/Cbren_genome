@@ -1,0 +1,23 @@
+#!/bin/bash
+
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=40G
+#SBATCH --job-name=mtDNA    ### Job Name
+#SBATCH --time=520:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16           ### Number of CPU
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate emboss
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/mtDNA/HiFi
+
+
+seqret -sequence final_mitogenome.COPY.fasta -feature -fformat genbank -fopenfile final_mitogenome.COPY.gb -osformat gff -osname_outseq final_mitogenome.COPY.GFF -ofdirectory_outseq /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/mtDNA/HiFi -auto

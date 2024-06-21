@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=genepainter   ### Job Name
+#SBATCH --mem=20g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-7327%100          ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate genepainter
+
+gpdir="/projects/phillipslab/ateterina/scripts/genepainter/gene_painter"
+outdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ALLGFF2"
+
+cd /projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genepainter/ORTHO
+
+
+
+LISTFILES=($(ls -rt OG*fa))
+file=${LISTFILES[$SLURM_ARRAY_TASK_ID]}
+
+
+sed  -i 's/\*//g' $file
+
+
+#alignments
+#mafft $file > ${file/fa/.ali.fasta}
+
+
+#exon-intron structures
+ruby $gpdir/gene_painter.rb -i ${file/fa/.ali.fasta} -p $outdir -o ${file/fa/.genepainter} --phylo --svg --statistics

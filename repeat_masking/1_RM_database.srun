@@ -1,0 +1,26 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=RM_ref    ### Job Name
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --mail-type=ALL              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=16            ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+module load easybuild  GCC/6.3.0-2.27  OpenMPI/2.0.2 RepeatMasker/4.0.7 RepeatModeler/1.0.11
+
+
+LISTFILES=(Cbren.genome.fasta)
+
+
+file=${LISTFILES[$SLURM_ARRAY_TASK_ID]}
+#ref_PB_HIC="/projects/phillipslab/shared/ref_genomes/CR_PB_HIC/c.remanei_13Mar2018_DsagR.fasta"
+#ref_CHR="/projects/phillipslab/shared/ref_genomes/CR_PB_HIC/CR.PX506.fasta"
+
+echo $file;
+BuildDatabase -name CB -engine ncbi $file
+$EBROOTREPEATMASKER/util/queryRepeatDatabase.pl -species rhabditida | grep -v "Species:" > Rhabditida.repeatmasker

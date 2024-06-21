@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH -A gc3f       ### Partition
+#SBATCH --job-name=juicer    ### Job Name
+#SBATCH --mem=100g
+#SBATCH --time=10:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=20            ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+module load racs-eb GNU/5.1.0-2.25 bwa java CUDA/7.5.18 samtools
+
+
+juicer="/projects/phillipslab/ateterina/scripts/juicer/CPU/scripts/juicer.sh"
+dir="/projects/phillipslab/ateterina/Cbren/assembly/3D_ASSEMBLY2"
+juicerdir="/projects/phillipslab/ateterina/scripts/juicer/stuff/CPU"
+
+
+#Pilon_Il_2ASM.fasta is the polished scaffolds
+#copy trimmer/filtered HiC reads into the fastq directory, they should have  _R1.fastq and _R2.fastq in their names.
+
+bwa index Pilon_Il_2ASM.fasta
+samtools faidx Pilon_Il_2ASM.fasta
+
+
+#generate a file with restriction sites positions
+/projects/phillipslab/ateterina/scripts/juicer/CPU/misc/generate_site_positions.py Sau3AI CBREN_POLISHED /projects/phillipslab/ateterina/Cbren/assembly/3D_ASSEMBLY2/Pilon_Il_2ASM.fasta
+
+
+
+#takes a few hours
+$juicer -t 20 -d $dir -D $juicerdir -s Sau3AI -R 2 -p $dir/Pilon_Il_2ASM.fasta.fai -z $dir/Pilon_Il_2ASM.fasta -y $dir/CBREN_POLISHED_Sau3AI.txt

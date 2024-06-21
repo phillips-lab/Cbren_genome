@@ -1,0 +1,125 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips    ### Partition
+#SBATCH --job-name=blob    ### Job Name
+#SBATCH --time=100:00:00        ### WallTime
+#SBATCH --mem=30G
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=1           ### Array index
+#SBATCH --mail-type=NONE              ### Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=teterina.anastasia@gmail.com  ### Where to send mail
+#SBATCH --cpus-per-task=16            ### Number of CPU cores per task
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+#source ~/.bashrc
+#conda activate blobtools2
+
+
+cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI
+mkdir -p BLOBSNOGAPS
+
+cd BLOBSNOGAPS
+
+nogaps="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/EXTEND_TERMINI/Cbren_gapless_genome.fasta"
+
+
+
+ref="Cbren.ALL.polished_hifi.fasta"
+HiFi="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/m64047_220412_221739.ccs.fastq.gz"
+nt="/projects/phillipslab/shared/ncbi_nt_db_8-5-22/nt"
+
+
+
+#conda deactivate
+source ~/.bashrc
+#conda activate blast
+
+#export BLASTDB="/projects/phillipslab/shared/ncbi_nt_db_8-5-22/"
+
+
+############################
+##add blast
+#blastn -db $nt \
+#   -query $nogaps \
+#   -outfmt "6 qseqid staxids bitscore std" \
+#   -evalue 1e-25 \
+#   -num_threads 16 \
+#   -out Cbren.nogaps.nt.blast.out
+
+
+
+#############################
+#add Coverage
+
+
+#source ~/.bashrc
+#conda deactivate
+#conda activate pb-assembly
+
+BAM="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/Cbren_HiFi_nogaps.bam"
+
+
+
+#module load samtools
+
+#pbmm2 align --preset CCS --sort -j 16 $nogaps  $HiFi $BAM
+
+#samtools view -@ 16 -F 1796 -q 20 -b $BAM | samtools sort -@ 8 -o ${BAM/.bam/.s.bam} -
+#samtools index ${BAM/.bam/.s.bam}
+
+
+
+
+#minimap2 -ax sr \
+#      -t 16 $ref \
+#       reads_1.fastq.gz reads_2.fastq.gz \
+#         | samtools sort -@16 -O BAM -o assembly.reads.bam -
+#
+
+#add BUSCO
+
+
+#conda deactivate
+#conda activate busco
+
+
+#busco download nematoda_odb10
+#cd /projects/phillipslab/shared/BUSCO
+#wget https://busco-data.ezlab.org/v5/data/lineages/nematoda_odb10.2020-08-05.tar.gz
+
+#tar -xvf nematoda_odb10.2020-08-05.tar.gz
+
+#cd /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/BLOBSNOGAPS
+
+#DBPATH="/projects/phillipslab/shared/BUSCO/"
+
+#busco -i $nogaps \
+#   -o assembly_ALL_nogaps_nematoda_odb10 \
+#   -l $DBPATH/nematoda_odb10 \
+#   -m genome \
+#   -c 16
+
+
+
+
+source ~/.bashrc
+conda deactivate
+conda activate blobtools2
+
+
+#ln -s /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/EXTEND_TERMINI/Cbren_gapless_genome.fasta /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/BLOBSNOGAPS/Cbren_gapless_genome.fasta
+
+#ln -s /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/Cbren_HiFi_nogaps.s.bam /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/BLOBSNOGAPS/Cbren_HiFi_nogaps.s.bam
+#ln -s /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/Cbren_HiFi_nogaps.s.bam.bai /projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/BLOBSNOGAPS/Cbren_HiFi_nogaps.s.bam.bai
+
+#create a database
+#blobtools create -i Cbren_gapless_genome.fasta -o Cbren_nogaps_ALL -b Cbren_HiFi_nogaps.s.bam -t Cbren.nogaps.nt.blast.out --names /projects/phillipslab/shared/ncbi_nt_db_8-5-22/data/names.dmp --nodes /projects/phillipslab/shared/ncbi_nt_db_8-5-22/data/nodes.dmp
+
+#get a table with results
+#blobtools view -i Cbren_nogaps_ALL.blobDB.json
+
+#get a plot
+blobtools plot  -i Cbren_nogaps_ALL.blobDB.json

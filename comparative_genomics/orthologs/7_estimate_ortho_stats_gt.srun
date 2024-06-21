@@ -1,0 +1,77 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=stat   ### Job Name
+#SBATCH --mem=240g
+#SBATCH --time=300:50:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0-6           ### Array index
+#SBATCH --cpus-per-task=1            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+dir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/Results_Oct28/Orthogroups"
+
+cd $dir
+
+
+
+
+#all genes that have orthpgroups + species specific
+species_names=("Cbren" "Cbrig" "Celeg" "Cinop" "Cnigo" "Crema" "Ctrop")
+
+for ((species=0; species<=6; species++));do
+      # Get the column index corresponding to the species ID
+        column=$((species + 1))
+        species_name="${species_names[species-1]}"
+        cat Orthogroups.tsv| cut  -f"$column" | tr ',' '\n' |sed -e '1d' -e '/^[[:space:]]*$/d' -e 's/ //g' - > "${species_name}_justall_genes.txt"
+        grep -f Orthogroups_SingleCopyOrthologues.txt Orthogroups.tsv |cut -f"$column"  > "${species_name}_1-to-1_genes.txt"
+
+done
+
+
+
+gt="/projects/phillipslab/ateterina/scripts/genometools/bin/gt"
+fdir="/projects/phillipslab/ateterina/Cbren/phylogenomics/worm23/genespace_newref/orthofinder/Results_Oct28/Orthogroups"
+
+pattern1="gene length distribution:"
+pattern2="exon length distribution:"
+pattern3="exon number distribution:"
+pattern4="intron length distribution:"
+
+
+sname=${species_names[$SLURM_ARRAY_TASK_ID]}
+
+ann="$fdir/${sname}_ann.longest.END.gff" # it has ; at the end of the lines
+    echo $sname;
+
+
+for suf in 1-to-1 justall; do
+
+        echo $suf;
+
+        while read -r line; do
+            awk -v pattern="$line" 'index($0, "ID=" pattern ";") || index($0, "Parent=" pattern ";") || index($0, pattern "$")' $ann >> $fdir/${sname}_${suf}.tmp.gff;
+        done < ${sname}_${suf}_genes.txt
+
+
+        sed -i "s/;$//g" $fdir/${sname}_${suf}.tmp.gff
+        agat_convert_sp_gxf2gxf.pl -g $fdir/${sname}_${suf}.tmp.gff -o $fdir/${sname}_${suf}.tmp2.gff
+        sed -i "s/\ttranscript\t/\tmRNA\t/g" $fdir/${sname}_${suf}.tmp2.gff
+        grep -P "#|\tgene|\tmRNA|\texon|\tCDS" $fdir/${sname}_${suf}.tmp2.gff > $fdir/${sname}_${suf}_ok.gff
+        $gt gff3 -tidy -retainids $fdir/${sname}_${suf}_ok.gff > $fdir/${sname}_${suf}_tidy.gff
+        $gt stat -genelengthdistri -exonnumberdistri -exonlengthdistri -addintrons -intronlengthdistri $fdir/${sname}_${suf}_tidy.gff &> $fdir/${sname}_${suf}_gt_stat.txt
+
+        sed -n "/$pattern1/,/$pattern2/p" $fdir/${sname}_${suf}_gt_stat.txt > $fdir/${sname}_${suf}_gt_stat_genelength.txt
+        sed -n "/$pattern2/,/$pattern3/p" $fdir/${sname}_${suf}_gt_stat.txt > $fdir/${sname}_${suf}_gt_stat_exonlength.txt
+        sed -n "/$pattern3/,/$pattern4/p" $fdir/${sname}_${suf}_gt_stat.txt > $fdir/${sname}_${suf}_gt_stat_exonnumber.txt
+        sed -n "/$pattern4/,$ p" $fdir/${sname}_${suf}_gt_stat.txt > $fdir/${sname}_${suf}_gt_stat_intronlength.txt
+
+done

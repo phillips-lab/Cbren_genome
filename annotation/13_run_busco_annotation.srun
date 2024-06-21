@@ -1,0 +1,131 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=40G
+#SBATCH --job-name=validation    ### Job Name
+#SBATCH --time=520:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16           ### Number of CPU
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+dir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+
+ref="$dir/VALIDATION/Cbren_soft_masked_IVrev.fasta"
+ann="$dir/VALIDATION/Cbren_annotation_final.gff3"
+
+refold="caenorhabditis_brenneri.PRJNA20035.WBPS18.genomic.fa"
+annoldprot="caenorhabditis_brenneri.PRJNA20035.WBPS18.protein.fa"
+
+
+#cat $dir/VALIDATION/Cbren_soft_masked_IVrev.fasta |tr 'atgc' 'ATGC' > Cbren_UNmasked_IVrev.fasta
+
+cd $dir/VALIDATION
+
+mkdir -p BUSCO_old_new_genome
+cd BUSCO_old_new_genome
+
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_brenneri/PRJNA20035/caenorhabditis_brenneri.PRJNA20035.WBPS18.genomic.fa.gz
+#gunzip caenorhabditis_brenneri.PRJNA20035.WBPS18.genomic.fa.gz
+
+
+#wget https://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_brenneri/PRJNA20035/caenorhabditis_brenneri.PRJNA20035.WBPS18.protein.fa.gzhttps://ftp.ebi.ac.uk/pub/databases/wormbase/parasite/releases/WBPS18/species/caenorhabditis_brenneri/PRJNA20035/caenorhabditis_brenneri.PRJNA20035.WBPS18.protein.fa.gz
+#gunzip caenorhabditis_brenneri.PRJNA20035.WBPS18.protein.fa.gz
+
+
+#for the new genome get longest isoforms
+source ~/.bashrc
+conda activate agatenv
+export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+
+agat_sp_keep_longest_isoform.pl -gff $ann  -o Cbren_final_longest.gff3
+grep -v -P "^MtDNA" Cbren_final_longest.gff3 > Cbren_final_longest_nomt.gff3 #this will go to genepainter and OG analysis later
+agat_sp_extract_sequences.pl -g Cbren_final_longest_nomt.gff3 -f $ref -p -o Cbren_final_longest_nomt_protein.fasta #this will go to orthofinder later
+
+
+##busco download nematoda_odb10
+##cd /projects/phillipslab/shared/BUSCO
+##wget https://busco-data.ezlab.org/v5/data/lineages/nematoda_odb10.2020-08-05.tar.gz
+##tar -xvf nematoda_odb10.2020-08-05.tar.gz
+
+
+#cd /projects/phillipslab/shared/BUSCO
+#wget https://busco-data.ezlab.org/v5/data/lineages/metazoa_odb10.2021-02-24.tar.gz
+#tar -xvf metazoa_odb10.2021-02-24.tar.gz
+#cd $dir/VAL*/BUS*
+
+
+
+
+source ~/.bashrc
+conda activate busco
+
+DBPATH="/projects/phillipslab/shared/BUSCO/"
+
+
+
+
+#busco -i Cbren_final_longest_nomt_protein.fasta \
+#      -o annotation_FINAL_NEW_nematoda_odb10 \
+#         -l $DBPATH/nematoda_odb10 \
+#       -m protein \
+#       -c 16
+
+#busco -i $annoldprot \
+#       -o annotation_OLD_nematoda_odb10 \
+#       -l $DBPATH/nematoda_odb10 \
+#       -m protein \
+#       -c 16
+
+
+
+#unmask
+#cp Cbren_UNmasked_IVrev.fasta Cbren_UNmasked_IVrev_extra_scaf.fasta
+
+#module load bedtools
+#dirblob="/projects/phillipslab/ateterina/Cbren/assembly/NEW_HIFI/BLOBSNOGAPS"
+
+
+#while read -r chr; do
+#      samtools faidx $dirblob/Cbren_gapless_genome.fasta $chr  >> Cbren_extrascaf.nem.fasta
+#done < $dirblob/LIST_OF_NEMATODA_NONCHR_COV_MORE50.txt
+
+
+#cat Cbren_extrascaf.nem.fasta >> Cbren_UNmasked_IVrev_extra_scaf.fasta
+
+
+
+busco -i Cbren_UNmasked_IVrev_extra_scaf.fasta \
+             -o assembly_NEW_EXTRA_SCAF_metazoa_odb10 \
+              -l $DBPATH/metazoa_odb10 \
+              -m genome \
+              -c 16
+
+
+busco -i Cbren_UNmasked_IVrev_extra_scaf.fasta \
+    -o assembly_NEW_EXTRA_SCAF_nematoda_odb10 \
+    -l $DBPATH/nematoda_odb10 \
+    -m genome \
+    -c 16
+
+
+
+
+
+busco -i $refold \
+    -o assembly_OLD_unmasked_metazoa_odb10 \
+    -l $DBPATH/metazoa_odb10 \
+    -m genome \
+    -c 16
+
+busco -i $refold \
+    -o assembly_OLD_unmasked_nematoda_odb10 \
+    -l $DBPATH/nematoda_odb10 \
+    -m genome \
+    -c 16

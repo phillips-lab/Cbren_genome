@@ -1,0 +1,93 @@
+-rw-r-----+ 1 teterina uoregon 5.4K Dec  4 15:33 24_run_busco_annotation.srun
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --mem=100g
+#SBATCH --job-name=maker    ### Job Name
+#SBATCH --time=204:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+#no#conda activate braker
+
+gendir="/projects/phillipslab/ateterina/Cbren/final_repeats"
+ref="Cbren.genome.softmasked.fasta"
+
+wdir="/projects/phillipslab/ateterina/Cbren/final_annotation"
+
+#get proteins
+
+#wget ftp://ftp.wormbase.org/pub/wormbase/species/c_remanei/sequence/protein/c_remanei.PRJNA577507.WS287.protein.fa.gz
+#wget ftp://ftp.wormbase.org/pub/wormbase/species/c_briggsae/sequence/protein/c_briggsae.PRJNA10731.WS287.protein.fa.gz
+#wget ftp://ftp.wormbase.org/pub/wormbase/species/c_brenneri/sequence/protein/c_brenneri.PRJNA20035.WS287.protein.fa.gz
+#wget ftp://ftp.wormbase.org/pub/wormbase/species/c_elegans/sequence/protein/c_elegans.PRJNA13758.WS287.protein.fa.gz
+#wget http://download.caenorhabditis.org/v2/genome_files/CWALL.caenorhabditis_wallacei_JU1898_v2.proteins.faa
+#wget http://download.caenorhabditis.org/v2/genome_files/CDOUG.caenorhabditis_doughertyi_JU1771_v2.proteins.faa
+
+
+#gunzip *.gz
+
+#combine proteins
+#cat *.proteins.* > COMBO_prots.fa
+
+
+#instruction: https://gist.github.com/darencard/bb1001ac1532dd4225b030cf0cd61ce2
+
+
+module load maker/2.31.9
+
+export PERL5LIB=/packages/perl/5.24.2/lib/5.24.2
+export PERLTOP=/packages/perl/5.24.2
+export PERL_LOCAL_LIB_ROOT=/packages/perl/5.24.2
+
+
+
+cd maker
+
+
+
+
+
+#maker -CTL
+
+#mpiexec -n 16 maker -base Cbren_rnd1 maker_opts_step1.ctl maker_bopts.ctl maker_exe.ctl
+
+#cd Cbren_rnd1.maker.output
+#gff3_merge -s -d Cbren_rnd1_master_datastore_index.log > Cbren_rnd1.all.maker.gff
+#fasta_merge -d Cbren_rnd1_master_datastore_index.log
+# GFF w/o the sequences
+#gff3_merge -n -s -d Cbren_rnd1_master_datastore_index.log >Cbren_rnd1.all.maker.gff
+
+
+
+
+#combine braker and old maker predictions
+
+
+
+
+
+
+#source ~/.bashrc
+#conda activate agatenv
+#export PERL5LIB=/projects/phillipslab/ateterina/scripts/miniconda3/envs/agatenv/lib/perl5/
+
+
+
+#agat_convert_sp_gxf2gxf.pl --gff /projects/phillipslab/ateterina/Cbren/final_annotation/braker_tmp/augustus.hints.gff -o /projects/phillipslab/ateterina/Cbren/final_annotation/braker_tmp/augustus.hints_fixed.gff
+
+
+#great! maker with predictions from braker and proteins!
+#mpiexec -n 16 maker -base Cbren_rnd1and2_2 maker_opts_step1and2_2.ctl maker_bopts.ctl maker_exe.ctl
+
+
+
+
+cd Cbren_rnd1and2_2.maker.output
+gff3_merge -s -d Cbren_rnd1and2_2_master_datastore_index.log> Cbren_seq.all.maker.gff
+fasta_merge -d Cbren_rnd1and2_2_master_datastore_index.log
+# GFF w/o the sequences
+gff3_merge -n -s -d Cbren_rnd1and2_2_master_datastore_index.log >Cbren.all.maker.gff
