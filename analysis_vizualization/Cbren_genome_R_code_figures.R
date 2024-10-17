@@ -7,6 +7,73 @@ setwd("/Users/anastasia/Documents/Phillips_lab/drafts/Cbren_genome")
 
 library(ggplot2)
 
+
+##############################################
+################## Fig1 ######################
+##############################################
+
+#################### probability of fixation ## Lynch 2002
+#N=10^2
+#s=0.001
+#fixpr = 2*N*2*s/(exp(2*N*s) - 1)
+
+
+
+calculate_fixpr <- function(N, s) {
+  return (2 * N * 2 * s / (exp(2 * N * s) - 1))
+}
+
+# Ne and s combinations
+
+N_values <- 10^(seq(2, 8, by = 0.25))
+s_values <- 10^(seq(1, -9, by = -0.25))
+
+
+resultsFIXPR <- data.frame(N = numeric(0), s = numeric(0), fixpr = numeric(0))
+
+
+for (N in N_values) {
+  for (s in s_values) {
+    fixpr <- calculate_fixpr(N, s)
+    resultsFIXPR <- rbind(resultsFIXPR, data.frame(N = N, s = s, Ns=N*s, fixpr = fixpr))
+  }
+}
+
+
+custom_palette <- colorRampPalette(c("black","#4fa0b8","#f0b326"))(100)
+
+#  scale_fill_viridis_c() +
+vertical_lines <- data.frame(x_intercept = c(10^3, 10^6, 10^7),
+                             label = c("C. tropicalis / C. elegans / C. briggsae",
+                                       "C. remanei",
+                                       "C. brenneri"))
+
+
+FIXPRplo <- ggplot(resultsFIXPR, aes(x = N, y = s, fill = fixpr)) +
+  geom_tile() +
+  scale_x_log10(breaks = 10^(2:8), labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  scale_y_log10(breaks = 10^(-9:1), labels = scales::trans_format("log10", scales::math_format(10^.x, format = "%g"))) +
+  scale_fill_gradientn(colors = custom_palette) +
+  labs(title = "",
+       x = "Population size (Ne)",
+       y = "Selection coefficient for introns (s)",
+       fill = "fixation\nprobability") +
+  theme_bw(base_size = 12)  + theme(
+    strip.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), strip.text = element_text(size = rel(1))
+  )  +  theme(strip.text = element_text(size = 12))  + theme(strip.text = element_text(size = 12)) +
+  geom_vline(data = vertical_lines, aes(xintercept = x_intercept), linetype = "dashed", color = "white",size=1.5) +
+  geom_text(data = vertical_lines, aes(x = x_intercept, label = label), color = "white", angle = 90, vjust = 1.5, hjust = 0,size =4.5,  fontface = "italic")
+
+
+
+tiff(filename = "FigS_prob.tiff",width = 7.2,height = 5.2, res=300, units = "in") ## Figure 1
+plot(FIXPRplo)
+dev.off()
+
+
+
 ##############################################
 ################## Fig2 ######################
 ##############################################
@@ -24,7 +91,7 @@ REP$Type<-c("repeats")
 COMBO<-rbind(EXON,INTRON)
 COMBO<-rbind(COMBO,REP)
 
-eirplot<- ggplot(
+eirplot<-   ggplot(
   COMBO[COMBO$V1 != "MtDNA" , ],
   aes_string(
     x = "V2",
@@ -33,14 +100,14 @@ eirplot<- ggplot(
     fill = "Type",
     ordered = FALSE
   )
-) + facet_grid(. ~ V1, scales  = "free") + theme_bw() + labs(title = "", x = "Genome Position (Mb)", y = "Fraction (%)") + theme(
+) + facet_grid(Type ~ V1, scales = "free_x") + theme_bw() + labs(title = "", x = "Genome Position (Mb)", y = "Fraction (%)") + theme(
   axis.text.x = element_text(
     angle = 0,
     vjust = 0.5,
     hjust = 0.5
   ),
   plot.title = element_text(hjust = 0.5)
-) + theme(legend.position = "top") + scale_colour_manual(
+) + theme(legend.position = "none") + scale_colour_manual(
   values = c("#FF7C01", "#3bb3ad", "#696866"),
   name = ""
 ) + scale_fill_manual(
@@ -53,12 +120,12 @@ eirplot<- ggplot(
   strip.background = element_rect(colour = "white", fill = "white"),
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank()
-)  + geom_smooth(method = "loess",span = 0.4) + theme(strip.text = element_text(size = 10))
+)  + geom_point(size=0.45, alpha = 0.4) + geom_smooth(method = "loess",span = 0.4) + theme(strip.text = element_text(size = 10))
 
 
 
 
-tiff(filename = "Fig1.tiff",width = 7.2,height = 3.2, res=300, units = "in")  ### Figure 2
+tiff(filename = "FigExInt.tiff",width = 7.2,height = 4.8, res=300, units = "in")  ### Figure 2
 plot(eirplot)
 dev.off()
 
@@ -66,6 +133,20 @@ dev.off()
 ##############################################
 ################## Fig3 ######################
 ##############################################
+############### trees
+alicov <-read.csv("comb.fasta.alignment_sizes.ok.txt",sep="\t",header=FALSE)
+mean(alicov$V4, na.rm = TRUE)
+#[1] 7335.481
+sd(alicov$V4, na.rm = TRUE)
+#[1] 5541.451
+
+hist(alicov$V4)
+
+table(alicov$V4>1000)
+#FALSE  TRUE
+#268  1791
+
+colnames(alicov)[4] <- "Coverage"
 
 library(ape)
 #library(phytools)
@@ -73,127 +154,7 @@ library(ggtree)
 library(patchwork)
 
 
-data<-read.csv("C.brenneri_trees.txt",header=F,sep=" ", stringsAsFactors = F)
-head(data)
-data$CHR<-gsub("\\..*$","", perl=T,data$V1)
-data$POS<-gsub(".*\\.([0-9]+)-.*$","\\1", perl=T,data$V1)
-
-
-data_subset <- data[data$V2 != "" & !grepl(":[912]",data$V2) & !grepl(":0.[89]", data$V2) & !grepl("0.00000000",data$V2), ]
-
-data_subset$heights <- sapply(data_subset$V2, function(tree_string) {
-  tree <- read.tree(text = tree_string)
-  max(node.depth.edgelength(tree))
-})
-
-
-#write.table(data_subset$V2, "ALL_trees2.nwk", sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
-
-TRSALL<-ape::read.tree("ALL_trees2.nwk")
-
-
-
-
-set.seed(777)
-SAMP<-sample(TRSALL,size=500)
-
-sublist<-list("Cbren"="C.brenneri", "Csp48"="C.sp48", "Csp44"="C.sp44", "Csp51"="C.sp51", "Cdoug"="C.doughertyi", "Ctrop"="C.tropicalis", "Cwall"="C.wallacei", "Crema"="C.remanei", "Celeg"="C.elegans", "Csp54"="C.sp54")
-
-
-SAMP2 <- lapply(SAMP, function(tree) {
-  tree$tip.label <- Reduce(function(x, pattern) gsub(pattern, sublist[[pattern]], x), names(sublist), init = tree$tip.label)
-  return(tree)
-})
-class(SAMP2)<- "multiPhylo"
-
-
-
-treeALL <- ggtree(SAMP2,layout="slanted", color="#008080", alpha=.1)  + geom_tiplab(size=4, align=TRUE, linesize=.5,fontface = "italic")  + ggtitle("B") +
-  theme(plot.title = element_text(face = "bold", hjust = 0))  + geom_treescale(x=0, y=0, width=0.1, color='black') + coord_cartesian(clip = "off") + theme(plot.margin = margin(0.2,2,0.2,0.2, "cm"))
-
-
-
-treeALL
-
-
-
-
-bra<-read.csv("C.brenneri_branches.txt",header=F, sep=" ")
-head(bra)
-levels(as.factor(bra$V1))
-table((bra$V1))
-bra<-bra[bra$V1 %in% c("I", "II", "III", "IV", "V", "X"),]
-bra$V1<-as.character(bra$V1)
-bra<-data.frame(bra)
-bra$Type <- "C.brenneri&C.sp48\nbranch"
-bra<-bra[,-3]
-colnames(bra)<-c("CHR",     "POS",     "heights", "Type")
-
-
-hei<-data_subset[data_subset$CHR!="MtDNA",c(3,4,5)]
-hei$Type <- "Total tree height"
-hei$POS<-as.numeric(as.character(hei$POS))
-
-
-
-phastcons <- read.csv("Cbren_combo_phastcons_50kb.wig",header=F, sep=" ")
-phastcons$CHR<-gsub("\\..*$","", perl=T,phastcons$V1)
-phastcons$POS<-gsub(".*\\.([0-9]+)-.*$","\\1", perl=T,phastcons$V1)
-phastcons$Type <- "phastCons score"
-phastcons <-phastcons[,c(3,4,2,5)]
-colnames(phastcons)<-c("CHR",     "POS",     "heights", "Type")
-phastcons$POS<-as.numeric(as.character(phastcons$POS))
-phastcons$heights <- as.numeric(as.character(phastcons$heights))
-
-hei<-rbind(hei,bra)
-hei<-rbind(hei,phastcons)
-
-
-hei$Type <- factor(hei$Type, levels = c("Total tree height","C.brenneri&C.sp48\nbranch","phastCons score"))
-
-hei <- hei[complete.cases(hei),]
-
-#table(hei[hei$heights > 1 & !is.na(hei$heights),]$Type)
-
-#Total tree height Cbren&C.sp48\nbranch      phastCons score
-#16                   15                    0
-heights<-ggplot(hei[hei$heights < 1,], aes(x = POS, y = heights, ordered = FALSE))  + facet_grid(Type ~ CHR, scales =
-                                                                                   "free") + theme_bw(base_size = 12) + labs(title = "C", x = "Genome Position (Mb)", y = "value") + theme(
-                                                                                     axis.text.x = element_text(
-                                                                                       angle = 0,
-                                                                                       vjust = 0.5,
-                                                                                       hjust = 0.5
-                                                                                     ),
-                                                                                     plot.title = element_text(face = "bold", hjust = 0)
-                                                                                   ) + theme(legend.position = "none") + theme(
-                                                                                     strip.background = element_blank(),
-                                                                                     panel.grid.major = element_blank(),
-                                                                                     panel.grid.minor = element_blank(), strip.text = element_text(size = rel(1))
-                                                                                   )  + geom_point(size = 0.45, alpha = 0.35) + geom_smooth(
-                                                                                     method = "loess",
-                                                                                     span = 0.4,
-                                                                                     color = "#3bb3ad",
-                                                                                     linetype = "solid",
-                                                                                     se = F,
-                                                                                     size = 1.1
-                                                                                   ) + theme(strip.text = element_text(size = 12))  + theme(strip.text = element_text(size = 12)) + scale_x_continuous(
-                                                                                     labels = function(x)
-                                                                                       x / 1000000
-                                                                                   ) + coord_cartesian(clip = "off")
-
-
-
-
-
-
-
-
-
-
-
-
-
-### topology
+##A
 
 topl<-read.csv("C.brenneri_topol.txt",header=F, sep=" ")
 topl$Type<-"Other topology"
@@ -201,12 +162,17 @@ topl[topl$V4=="",]$Type <- "NA"
 topl$Type[grepl("(Cbren,Csp48)",topl$V4)] <- "((C.brenneri,C.sp48),others);"
 
 topl <-topl[topl$V1!="MtDNA",]
+
+
+topl <- merge(topl,alicov, by=c("V1","V2","V3"),all.x=TRUE)
+table(topl$Type)
+#((C.brenneri,C.sp48),others);                            NA                Other topology
+#1456                           958                            52
+topl$Type[topl$Coverage < 1000 & !is.na(topl$Type)]<- "NA"
+
 topl<-as.data.frame(topl)
 topl$Type <-factor(topl$Type,levels=c("((C.brenneri,C.sp48),others);","Other topology","NA"))
 
-
-#library(data.table)
-##ff7f00
 toplot<-  ggplot(topl, aes(y = V2))  +
   coord_flip() +   facet_grid(.~V1,scales="free") + geom_rect(data=topl,aes(ymin=V2, ymax=V3, xmin=10, xmax=20,fill=Type,color=Type)) + theme_bw() +  theme(
     strip.background = element_rect(colour = "white", fill = "white"),
@@ -232,14 +198,140 @@ toplot<-  ggplot(topl, aes(y = V2))  +
 
 
 
+
+##B
+
+
+
+
+
+data<-read.csv("C.brenneri_trees.txt",header=F,sep=" ", stringsAsFactors = F)
+head(data)
+data$CHR<-gsub("\\..*$","", perl=T,data$V1)
+data$POS<-gsub(".*\\.([0-9]+)-.*$","\\1", perl=T,data$V1)
+
+
+data_subset <- data[data$V2 != "" & !grepl(":[912]",data$V2) & !grepl(":0.[89]", data$V2) & !grepl("0.00000000",data$V2), ]
+
+
+
+colnames(alicov)[1:2] <- c("CHR","POS")
+data_subset <- merge(data_subset,alicov[,c("CHR","POS","Coverage")], by=c("CHR","POS"), all.x=TRUE)
+data_subset <- data_subset[data_subset$Coverage >=1000, ]
+data_subset$heights <- sapply(data_subset$V2, function(tree_string) {
+  tree <- read.tree(text = tree_string)
+  max(node.depth.edgelength(tree))
+})
+
+write.table(data_subset$V2, "ALL_trees3.nwk", sep = "\t", quote = FALSE, col.names = FALSE, row.names = FALSE)
+TRSALL<-ape::read.tree("ALL_trees3.nwk")
+
+set.seed(777)
+SAMP<-sample(TRSALL,size=500)
+
+sublist<-list("Cbren"="C.brenneri", "Csp48"="C.sp48", "Csp44"="C.sp44", "Csp51"="C.sp51", "Cdoug"="C.doughertyi", "Ctrop"="C.tropicalis", "Cwall"="C.wallacei", "Crema"="C.remanei", "Celeg"="C.elegans", "Csp54"="C.sp54")
+
+
+SAMP2 <- lapply(SAMP, function(tree) {
+  tree$tip.label <- Reduce(function(x, pattern) gsub(pattern, sublist[[pattern]], x), names(sublist), init = tree$tip.label)
+  return(tree)
+})
+class(SAMP2)<- "multiPhylo"
+
+
+
+treeALL <- ggtree(SAMP2,layout="slanted", color="#008080", alpha=.1)  + geom_tiplab(size=4, align=TRUE, linesize=.5,fontface = "italic")  + ggtitle("B") +
+  theme(plot.title = element_text(face = "bold", hjust = 0))  + geom_treescale(x=0, y=0, width=0.1, color='black') + coord_cartesian(clip = "off") + theme(plot.margin = margin(0.2,2,0.2,0.2, "cm"))
+
+
+
+treeALL
+
+bra<-read.csv("C.brenneri_branches.txt",header=F, sep=" ")
+head(bra)
+levels(as.factor(bra$V1))
+table((bra$V1))
+bra<-bra[bra$V1 %in% c("I", "II", "III", "IV", "V", "X"),]
+bra$V1<-as.character(bra$V1)
+bra<-data.frame(bra)
+bra$Type <- "C.brenneri&C.sp48\nbranch"
+bra<-bra[,-3]
+colnames(bra)<-c("CHR",     "POS",     "heights", "Type")
+colnames(topl)[c(1,2,5)] <- c("CHR",     "POS","TOPTYPE")
+bra <- merge(bra, topl[,c("CHR",  "POS","TOPTYPE")], by=c("CHR","POS"), all.x=TRUE)
+bra <- bra[bra$TOPTYPE =="((C.brenneri,C.sp48),others);", ]
+
+hei<-data_subset[data_subset$CHR!="MtDNA",c(1,2,6)]
+hei$Type <- "Total tree height"
+hei$POS<-as.numeric(as.character(hei$POS))
+
+
+phastcons <- read.csv("Cbren_combo_phastcons_50kb.wig",header=F, sep=" ")
+phastcons$CHR<-gsub("\\..*$","", perl=T,phastcons$V1)
+phastcons$POS<-gsub(".*\\.([0-9]+)-.*$","\\1", perl=T,phastcons$V1)
+phastcons$Type <- "phastCons score"
+phastcons <-phastcons[,c(3,4,2,5)]
+colnames(phastcons)<-c("CHR",     "POS",     "heights", "Type")
+phastcons<- merge(phastcons,alicov[,c("CHR","POS","Coverage")], by=c("CHR","POS"), all.x=TRUE)
+phastcons<- phastcons[phastcons$Coverage >=1000, ]
+
+phastcons$POS<-as.numeric(as.character(phastcons$POS))
+phastcons$heights <- as.numeric(as.character(phastcons$heights))
+
+hei<-rbind(hei[,c("CHR",     "POS",     "heights", "Type")],bra[,c("CHR",     "POS",     "heights", "Type")])
+hei<-rbind(hei,phastcons[,c("CHR",     "POS",     "heights", "Type")])
+
+
+hei$Type <- factor(hei$Type, levels = c("Total tree height","C.brenneri&C.sp48\nbranch","phastCons score"))
+
+hei <- hei[complete.cases(hei),]
+
+heights<-ggplot(hei[hei$heights < 1,], aes(x = POS, y = heights, ordered = FALSE))  + facet_grid(Type ~ CHR, scales =
+                                                                                                   "free") + theme_bw(base_size = 12) + labs(title = "C", x = "Genome Position (Mb)", y = "value") + theme(
+                                                                                                     axis.text.x = element_text(
+                                                                                                       angle = 0,
+                                                                                                       vjust = 0.5,
+                                                                                                       hjust = 0.5
+                                                                                                     ),
+                                                                                                     plot.title = element_text(face = "bold", hjust = 0)
+                                                                                                   ) + theme(legend.position = "none") + theme(
+                                                                                                     strip.background = element_blank(),
+                                                                                                     panel.grid.major = element_blank(),
+                                                                                                     panel.grid.minor = element_blank(), strip.text = element_text(size = rel(1))
+                                                                                                   )  + geom_point(size = 0.45, alpha = 0.35) + geom_smooth(
+                                                                                                     method = "loess",
+                                                                                                     span = 0.4,
+                                                                                                     color = "#3bb3ad",
+                                                                                                     linetype = "solid",
+                                                                                                     se = F,
+                                                                                                     size = 1.1
+                                                                                                   ) + theme(strip.text = element_text(size = 12))  + theme(strip.text = element_text(size = 12)) + scale_x_continuous(
+                                                                                                     labels = function(x)
+                                                                                                       x / 1000000
+                                                                                                   ) + coord_cartesian(clip = "off")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 FIG2<- (toplot/treeALL/heights) +
   plot_layout(heights  = c(1,8,15))
 
 
-tiff(filename = "Fig2.tiff",width = 7.2,height = 10.9, res=300, units = "in") ###Figure 3
+tiff(filename = "Fig3filter.tiff",width = 7.2,height = 10.9, res=300, units = "in") ###Figure 3
 plot(FIG2)
 dev.off()
-
 
 ##############################################
 ################## Fig4 ######################
@@ -2712,65 +2804,101 @@ dev.off()
 
 
 
-#################### probability of fixation ## Lynch 2002
-#N=10^2
-#s=0.001
-#fixpr = 2*N*2*s/(exp(2*N*s) - 1)
+#############extra figure for HiFi coverage/het #############
 
 
-calculate_fixpr <- function(N, s) {
-  return (2 * N * 2 * s / (exp(2 * N * s) - 1))
-}
+covHIFI <-read.csv("Cbren_HiFi_to_chr.filt_asm20.cov_100kb.bed",sep="\t",header=FALSE)
 
-# Ne and s combinations
-#N_values <- 10^seq(2, 7, by = 1)
-#s_values <- 10^seq(1, -9, by = -1)
-
-#more deatails
-N_values <- 10^(seq(2, 8, by = 0.25))
-#s_values <- 10^(seq(1, -9, by = -0.25))
-s_values <- 10^(seq(1, -9, by = -0.25))
+hetHIFI <-read.csv("Cbren_HiFi_to_chr.filt_asm20.het.filt_100kb.bed",sep="\t",header=FALSE)
 
 
-resultsFIXPR <- data.frame(N = numeric(0), s = numeric(0), fixpr = numeric(0))
+covHIFI$Type <- "coverage"
+hetHIFI$Type <- "alternative allele"
 
-
-for (N in N_values) {
-  for (s in s_values) {
-    fixpr <- calculate_fixpr(N, s)
-    resultsFIXPR <- rbind(resultsFIXPR, data.frame(N = N, s = s, Ns=N*s, fixpr = fixpr))
-  }
-}
-
-
-custom_palette <- colorRampPalette(c("black","#4fa0b8","#f0b326"))(100)
-
-#  scale_fill_viridis_c() +
-vertical_lines <- data.frame(x_intercept = c(10^3, 10^6, 10^7),
-                             label = c("C. tropicalis / C. elegans / C. briggsae",
-                                       "C. remanei",
-                                       "C. brenneri"))
-
-
-FIXPRplo <- ggplot(resultsFIXPR, aes(x = N, y = s, fill = fixpr)) +
-  geom_tile() +
-  scale_x_log10(breaks = 10^(2:8), labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-  scale_y_log10(breaks = 10^(-9:1), labels = scales::trans_format("log10", scales::math_format(10^.x, format = "%g"))) +
-  scale_fill_gradientn(colors = custom_palette) +
-  labs(title = "",
-       x = "Population size (Ne)",
-       y = "Selection coefficient for introns (s)",
-       fill = "fixing\nprobability") +
-  theme_bw(base_size = 12)  + theme(
-    strip.background = element_blank(),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(), strip.text = element_text(size = rel(1))
-  )  +  theme(strip.text = element_text(size = 12))  + theme(strip.text = element_text(size = 12)) +
-  geom_vline(data = vertical_lines, aes(xintercept = x_intercept), linetype = "dashed", color = "white",size=1.5) +
-  geom_text(data = vertical_lines, aes(x = x_intercept, label = label), color = "white", angle = 90, vjust = 1.5, hjust = 0,size =4.5,  fontface = "italic")
+comboHIFI <- rbind(covHIFI,hetHIFI)
+#filtered 5 windows
+fighifiA<- ggplot(
+  covHIFI[covHIFI$V1 != "MtDNA" , ],
+  aes(
+    x = V2,
+    y = covHIFI[covHIFI$V1 != "MtDNA" , ]$V4,
+    color = Type,
+    fill = Type,
+    ordered = FALSE
+  )
+) + facet_grid(. ~ V1, scales = "free") + theme_bw() + labs(title = "A", x = "Genome Position (Mb)", y = "Depth of coverege") + theme(
+  axis.text.x = element_text(
+    angle = 0,
+    vjust = 0.5,
+    hjust = 0.5
+  ),
+  plot.title = element_text(hjust = 0.5)
+) + theme(legend.position = "none") + scale_colour_manual(
+  values = c("#FF7C01", "#3bb3ad", "#696866"),
+  name = ""
+) + scale_fill_manual(
+  values = c("#FF7C01", "#3bb3ad", "#696866"),
+  name = ""
+) + scale_x_continuous(
+  labels = function(x)
+    x / 1000000
+) + theme(
+  strip.background = element_rect(colour = "white", fill = "white"),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank()
+)  + geom_point(size=0.45, alpha = 0.4) + geom_smooth(method = "loess",span = 0.4) + theme(strip.text = element_text(size = 10),plot.title = element_text(face = "bold", hjust = 0)) + ylim(NA,250)
 
 
 
-tiff(filename = "FigS_prob.tiff",width = 7.2,height = 5.2, res=300, units = "in") ## Figure 1
-plot(FIXPRplo)
+fighifiB <- ggplot(
+  hetHIFI[hetHIFI$V1 != "MtDNA" , ],
+  aes(
+    x = V2,
+    y = hetHIFI[hetHIFI$V1 != "MtDNA" , ]$V4,
+    color = Type,
+    fill = Type,
+    ordered = FALSE
+  )
+) + facet_grid(. ~ V1, scales = "free") + theme_bw() + labs(title = "B", x = "Genome Position (Mb)", y = "Fraction of positions\nwith an alternative allele") + theme(
+  axis.text.x = element_text(
+    angle = 0,
+    vjust = 0.5,
+    hjust = 0.5
+  ),
+  plot.title = element_text(hjust = 0.5)
+) + theme(legend.position = "none") + scale_colour_manual(
+  values = c("#FF7C01", "#3bb3ad", "#696866"),
+  name = ""
+) + scale_fill_manual(
+  values = c("#FF7C01", "#3bb3ad", "#696866"),
+  name = ""
+) + scale_x_continuous(
+  labels = function(x)
+    x / 1000000
+) + theme(
+  strip.background = element_rect(colour = "white", fill = "white"),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank()
+)  + geom_point(size=0.45, alpha = 0.4) + geom_smooth(method = "loess",span = 0.4) + theme(strip.text = element_text(size = 10),plot.title = element_text(face = "bold", hjust = 0))
+
+
+library(patchwork)
+fighifi <- fighifiA / fighifiB
+tiff(filename = "FigHiFi.tiff",width = 7.2,height = 6.9, res=300, units = "in") ###Figure HiFi
+plot(fighifi)
 dev.off()
+
+mean(hetHIFI[!hetHIFI$V1 %in% c("MtDNA","X") , ]$V4, na.rm = TRUE)
+#[1] 0.0002970802
+sd(hetHIFI[!hetHIFI$V1 %in% c("MtDNA","X") , ]$V4, na.rm = TRUE)
+#[1] 0.0005860219
+mean(hetHIFI[hetHIFI$V1 %in% c("X") , ]$V4, na.rm = TRUE)
+#[1] 0.001240555
+sd(hetHIFI[hetHIFI$V1 %in% c("X") , ]$V4, na.rm = TRUE)
+#[1] 0.002914255
+
+
+mean(covHIFI[!hetHIFI$V1 %in% c("MtDNA") , ]$V4, na.rm = TRUE)
+#[1] 142.8418
+sd(covHIFI[!hetHIFI$V1 %in% c("MtDNA") , ]$V4, na.rm = TRUE)
+#[1] 41.04659

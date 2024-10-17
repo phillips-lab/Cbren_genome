@@ -1,0 +1,100 @@
+#!/bin/bash
+#SBATCH -A phillipslab
+#SBATCH --partition=phillips       ### Partition
+#SBATCH --job-name=minimap2   ### Job Name
+#SBATCH --mem=20g
+#SBATCH --time=64:00:00        ### WallTime
+#SBATCH --nodes=1              ### Number of Nodes
+#SBATCH --ntasks=1             ### Number of tasks per array job
+#SBATCH --array=0           ### Array index
+#SBATCH --cpus-per-task=16            ### Number of CPU cores per task
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+
+
+source ~/.bashrc
+conda activate pb-assembly
+
+module load samtools
+
+cd /projects/phillipslab/ateterina/Cbren/revision_GBE
+#Cbren_chr.fa  Cbren_scaf_to_test.fa  Cbren_soft_masked_submission_genomic_TMP.fasta
+#pbmm2 align --preset CCS --sort -j 16 Cbren_chr.fa  Cbren_scaf_to_test.fa Cbren_notchr_to_chr.bam
+
+#####
+#samtools view -@ 16  -q 20 -b Cbren_notchr_to_chr.bam -o Cbren_notchr_to_chr.filt.bam
+#samtools index Cbren_notchr_to_chr.filt.bam
+
+
+
+
+
+#pbmm2 align --preset CCS --sort -j 16 Cbren_chr.fa  m64047_220412_221739.ccs.fastq Cbren_HiFi_to_chr.bam
+#samtools view -@ 16  -q 20 -b Cbren_HiFi_to_chr.bam -o Cbren_HiFi_to_chr.filt.bam
+#samtools index Cbren_HiFi_to_chr.filt.bam
+
+
+#module load racs-eb GCC/4.9.2 zlib/1.2.8-GCC-4.9.2 samtools
+#minimap2="/projects/phillipslab/ateterina/scripts/minimap2/minimap2"
+
+
+#$minimap2 -cx asm20 --cs -t8 -a --secondary=no -t8 Cbren_chr.fa  m64047_220412_221739.ccs.fastq | samtools sort -@ 8 -o Cbren_HiFi_to_chr.asm20.bam
+#samtools view -@ 16  -q 20 -o Cbren_HiFi_to_chr.filt_asm20.bam -b Cbren_HiFi_to_chr.asm20.bam
+#samtools index Cbren_HiFi_to_chr.filt_asm20.bam
+
+GATK="/projects/phillipslab/ateterina/scripts/gatk-4.1.4.1/gatk"
+picard="/projects/phillipslab/ateterina/scripts/picard/build/libs/picard.jar"
+
+module load samtools
+
+#samtools faidx Cbren_chr.fa
+#java -jar $picard CreateSequenceDictionary R=Cbren_chr.fa O=Cbren_chr.dict
+
+#java -Xmx4g -jar $picard AddOrReplaceReadGroups I=Cbren_HiFi_to_chr.filt_asm20.bam O=Cbren_HiFi_to_chr.filt_asm20.re.bam RGPL=pb RGLB=Cbren_HiFi_to_chr.filt_asm20 RGPU=NONE RGSM=Cbren_HiFi_to_chr.filt_asm20;
+#samtools index Cbren_HiFi_to_chr.filt_asm20.re.bam
+
+
+#$GATK --java-options "-Xmx15g -Xms10g" HaplotypeCaller -R Cbren_chr.fa -I Cbren_HiFi_to_chr.filt_asm20.re.bam -O Cbren_HiFi_to_chr.filt_asm20.raw.g.vcf --emit-ref-confidence GVCF
+
+#$GATK --java-options "-Xmx15g -Xms10g" HaplotypeCaller -R Cbren_chr.fa -I Cbren_HiFi_to_chr.filt.bam -O Cbren_HiFi_to_chr.filt.raw.g.vcf --emit-ref-confidence GVCF
+
+
+#$GATK --java-options "-Xmx15g -Xms10g" GenotypeGVCFs  -R Cbren_chr.fa  -V Cbren_HiFi_to_chr.filt_asm20.raw.g.vcf --include-non-variant-sites -O Cbren_HiFi_to_chr.filt_asm20.raw.vcf -G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation
+
+
+#$GATK --java-options "-Xmx15g -Xms10g" GenotypeGVCFs  -R Cbren_chr.fa  -V Cbren_HiFi_to_chr.filt.raw.g.vcf --include-non-variant-sites -O Cbren_HiFi_to_chr.filt.raw.vcf -G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation
+
+module load bedtools
+#bedtools makewindows -g Cbren_chr.fa.fai -w 100000 > Cbren_chr.100kb.bed
+module load vcftools/0.1.17
+
+#vcftools --vcf Cbren_HiFi_to_chr.filt_asm20.raw.vcf  --max-missing 1 --minDP 5 --maxDP 150 --recode --stdout |grep -v "#" - | awk '{print $1"\t"$2-1"\t"$2}' - >Cbren_HiFi_to_chr.filt_asm20_intervals_cov_by5-150.txt
+
+#vcftools --vcf Cbren_HiFi_to_chr.filt.raw.vcf  --max-missing 1 --minDP 5 --maxDP 150 --recode --stdout |grep -v "#" - | awk '{print $1"\t"$2-1"\t"$2}' - >Cbren_HiFi_to_chr.filt_intervals_cov_by5-150.txt
+
+maskedranges="/projects/phillipslab/ateterina/scripts/generate_masked_ranges.py"
+
+
+#cat Cbren_chr.fa | tr 'atgc' 'N' > Cbren_chr_masked.fa
+#python2 $maskedranges Cbren_chr_masked.fa > Cbren_masked_chr.bed
+
+
+
+
+#samtools depth -aa Cbren_HiFi_to_chr.filt_asm20.re.bam | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' - | bedtools subtract -a - -b Cbren_masked_chr.bed | bedtools map -b - -a Cbren_chr.100kb.bed -c 4 -o mean > Cbren_HiFi_to_chr.filt_asm20.cov_100kb.bed
+
+
+
+#bedtools subtract  -b Cbren_masked_chr.bed -a Cbren_HiFi_to_chr.filt_asm20.raw.vcf | grep -v "#" - | awk '{if ($0 ~ /0[\/|]0/) print $1, $2-1, $2, 0; else if ($0 ~ /0[\/|]1/ || $0 ~ /1[\/|]1/ || $0 ~ /1[\/|]2/) print $1, $2-1, $2, 1}' - | sed 's/ /\t/g' - | bedtools map -b - -a Cbren_chr.100kb.bed -c 4 -o mean > Cbren_HiFi_to_chr.filt_asm20.het_100kb.bed
+
+#also, just count positions with alternative allele
+#bedtools subtract  -b Cbren_masked_chr.bed -a Cbren_HiFi_to_chr.filt_asm20.raw.vcf | grep -v "#" - | awk '{if ($0 ~ /0[\/|]0/) print $1, $2-1, $2, 0; else if ($0 ~ /0[\/|]1/ || $0 ~ /1[\/|]1/ || $0 ~ /1[\/|]2/) print $1, $2-1, $2, 1}' - | sed 's/ /\t/g' - | bedtools map -b - -a Cbren_chr.100kb.bed -c 4 -o sum > Cbren_HiFi_to_chr.filt_asm20.het_count_100kb.bed
+
+
+
+
+
+
+#$GATK --java-options "-Xmx15g -Xms10g" VariantFiltration  -R Cbren_chr.fa  -V Cbren_HiFi_to_chr.filt_asm20.raw.vcf --filter-expression ' QD < 2.0 || FS > 60.0 || MQ < 40.0 || QUAL < 30 ' --filter-name 'QD2_FS60_MQ40_QUAL30'  -O Cbren_HiFi_to_chr.filt_asm20.filt.vcf
+
+bedtools subtract  -b Cbren_masked_chr.bed -a Cbren_HiFi_to_chr.filt_asm20.filt.vcf | grep -v "#" - | awk '{if ($0 ~ /0[\/|]0/ && $7 == "PASS") print $1, $2-1, $2, 0; else if (($0 ~ /0[\/|]1/ || $0 ~ /1[\/|]1/ || $0 ~ /1[\/|]2/) && $7 == "PASS") print $1, $2-1, $2, 1}' - | sed 's/ /\t/g' - | bedtools map -b - -a Cbren_chr.100kb.bed -c 4 -o mean > Cbren_HiFi_to_chr.filt_asm20.het.filt_100kb.bed
