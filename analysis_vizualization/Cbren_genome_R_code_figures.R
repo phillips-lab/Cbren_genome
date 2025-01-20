@@ -1,5 +1,5 @@
 ##############################################
-######### C.breneri genome ###################
+######### C.brenneri genome ###################
 ########### Figures ##########################
 ##############################################
 
@@ -91,41 +91,87 @@ REP$Type<-c("repeats")
 COMBO<-rbind(EXON,INTRON)
 COMBO<-rbind(COMBO,REP)
 
-eirplot<-   ggplot(
-  COMBO[COMBO$V1 != "MtDNA" , ],
+eirplot <- ggplot(
+  COMBO[COMBO$V1 != "MtDNA", ],
   aes_string(
     x = "V2",
-    y = COMBO[COMBO$V1 != "MtDNA" , ]$V7 * 100,
+    y = COMBO[COMBO$V1 != "MtDNA", ]$V7 * 100,
     color = "Type",
     fill = "Type",
     ordered = FALSE
   )
-) + facet_grid(Type ~ V1, scales = "free_x") + theme_bw() + labs(title = "", x = "Genome Position (Mb)", y = "Fraction (%)") + theme(
-  axis.text.x = element_text(
-    angle = 0,
-    vjust = 0.5,
-    hjust = 0.5
-  ),
-  plot.title = element_text(hjust = 0.5)
-) + theme(legend.position = "none") + scale_colour_manual(
-  values = c("#FF7C01", "#3bb3ad", "#696866"),
-  name = ""
-) + scale_fill_manual(
-  values = c("#FF7C01", "#3bb3ad", "#696866"),
-  name = ""
-) + scale_x_continuous(
-  labels = function(x)
-    x / 1000000
-) + theme(
-  strip.background = element_rect(colour = "white", fill = "white"),
-  panel.grid.major = element_blank(),
-  panel.grid.minor = element_blank()
-)  + geom_point(size=0.45, alpha = 0.4) + geom_smooth(method = "loess",span = 0.4) + theme(strip.text = element_text(size = 10))
+) +
+  facet_grid(Type ~ V1, scales = "free_x", space = "free_x") +
+  theme_bw() +
+  labs(title = "", x = "Genome Position (Mb)", y = "Fraction (%)") +
+  theme(
+    axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none",
+    strip.background = element_rect(colour = "white", fill = "white"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(
+    values = c("#FF7C01", "#3bb3ad", "#696866"),
+    name = ""
+  ) +
+  scale_fill_manual(
+    values = c("#FF7C01", "#3bb3ad", "#696866"),
+    name = ""
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, max(COMBO$V2, na.rm = TRUE), by = 5000000),
+    labels = function(x) x / 1000000
+  ) +
+  geom_point(size = 0.45, alpha = 0.4) +
+  geom_smooth(method = "loess", span = 0.4)
 
+print(eirplot)
 
+tiff(filename = "FigExIntEven.tiff",width = 7.2,height = 4.8, res=300, units = "in")  ### Figure 2
+plot(eirplot)
+dev.off()eirplot <- ggplot(
+  COMBO[COMBO$V1 != "MtDNA", ],
+  aes_string(
+    x = "V2",
+    y = COMBO[COMBO$V1 != "MtDNA", ]$V7 * 100,
+    color = "Type",
+    fill = "Type",
+    ordered = FALSE
+  )
+) +
+  facet_grid(Type ~ V1, scales = "free_x", space = "free_x") +
+  theme_bw() +
+  labs(title = "", x = "Genome Position (Mb)", y = "Fraction (%)") +
+  theme(
+    axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5),
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none",
+    strip.background = element_rect(colour = "white", fill = "white"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(size = 10)
+  ) +
+  scale_colour_manual(
+    values = c("#FF7C01", "#3bb3ad", "#696866"),
+    name = ""
+  ) +
+  scale_fill_manual(
+    values = c("#FF7C01", "#3bb3ad", "#696866"),
+    name = ""
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, max(COMBO$V2, na.rm = TRUE), by = 5000000),
+    labels = function(x) x / 1000000
+  ) +
+  geom_point(size = 0.45, alpha = 0.4) +
+  geom_smooth(method = "loess", span = 0.4)
 
+print(eirplot)
 
-tiff(filename = "FigExInt.tiff",width = 7.2,height = 4.8, res=300, units = "in")  ### Figure 2
+tiff(filename = "FigExIntEven.tiff",width = 7.2,height = 4.8, res=300, units = "in")  ### Figure 2
 plot(eirplot)
 dev.off()
 
@@ -191,7 +237,7 @@ toplot<-  ggplot(topl, aes(y = V2))  +
                                                    parse(text = expression(paste("((", italic(C.brenneri), ",", italic(C.sp48), "),others);"))),
                                                    parse(text = "plain('Other topology')"),
                                                    parse(text = "plain('NA')")
-                                                 )) + labs(title = "A", y = "Genome Position (Mb)", x = "Topology")  + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank(), plot.title = element_text(face = "bold", hjust = 0), legend.text = element_text(hjust = 0)) + theme(legend.position = "top")
+                                                 )) + labs(y = "Genome Position (Mb)", x = "Topology")  + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank(), plot.title = element_text(face = "bold", hjust = 0), legend.text = element_text(hjust = 0)) + theme(legend.position = "top")
 
 
 
@@ -240,7 +286,7 @@ class(SAMP2)<- "multiPhylo"
 
 
 
-treeALL <- ggtree(SAMP2,layout="slanted", color="#008080", alpha=.1)  + geom_tiplab(size=4, align=TRUE, linesize=.5,fontface = "italic")  + ggtitle("B") +
+treeALL <- ggtree(SAMP2,layout="slanted", color="#008080", alpha=.1)  + geom_tiplab(size=4, align=TRUE, linesize=.5,fontface = "italic")  +
   theme(plot.title = element_text(face = "bold", hjust = 0))  + geom_treescale(x=0, y=0, width=0.1, color='black') + coord_cartesian(clip = "off") + theme(plot.margin = margin(0.2,2,0.2,0.2, "cm"))
 
 
@@ -254,7 +300,7 @@ table((bra$V1))
 bra<-bra[bra$V1 %in% c("I", "II", "III", "IV", "V", "X"),]
 bra$V1<-as.character(bra$V1)
 bra<-data.frame(bra)
-bra$Type <- "C.brenneri&C.sp48\nbranch"
+bra$Type <- "C.brenneri&C.sp48\nbranch lengths"
 bra<-bra[,-3]
 colnames(bra)<-c("CHR",     "POS",     "heights", "Type")
 colnames(topl)[c(1,2,5)] <- c("CHR",     "POS","TOPTYPE")
@@ -282,12 +328,12 @@ hei<-rbind(hei[,c("CHR",     "POS",     "heights", "Type")],bra[,c("CHR",     "P
 hei<-rbind(hei,phastcons[,c("CHR",     "POS",     "heights", "Type")])
 
 
-hei$Type <- factor(hei$Type, levels = c("Total tree height","C.brenneri&C.sp48\nbranch","phastCons score"))
+hei$Type <- factor(hei$Type, levels = c("Total tree height","C.brenneri&C.sp48\nbranch lengths","phastCons score"))
 
 hei <- hei[complete.cases(hei),]
 
-heights<-ggplot(hei[hei$heights < 1,], aes(x = POS, y = heights, ordered = FALSE))  + facet_grid(Type ~ CHR, scales =
-                                                                                                   "free") + theme_bw(base_size = 12) + labs(title = "C", x = "Genome Position (Mb)", y = "value") + theme(
+heights2<-ggplot(hei[hei$heights < 1,], aes(x = POS, y = heights, ordered = FALSE))  + facet_grid(Type ~ CHR, scales =
+                                                                                                   "free", space="free",switch = "y") + theme_bw(base_size = 12) + labs(x = "Genome Position (Mb)", y = NULL) + theme(
                                                                                                      axis.text.x = element_text(
                                                                                                        angle = 0,
                                                                                                        vjust = 0.5,
@@ -295,6 +341,7 @@ heights<-ggplot(hei[hei$heights < 1,], aes(x = POS, y = heights, ordered = FALSE
                                                                                                      ),
                                                                                                      plot.title = element_text(face = "bold", hjust = 0)
                                                                                                    ) + theme(legend.position = "none") + theme(
+                                                                                                     strip.placement = "outside",
                                                                                                      strip.background = element_blank(),
                                                                                                      panel.grid.major = element_blank(),
                                                                                                      panel.grid.minor = element_blank(), strip.text = element_text(size = rel(1))
@@ -305,31 +352,19 @@ heights<-ggplot(hei[hei$heights < 1,], aes(x = POS, y = heights, ordered = FALSE
                                                                                                      linetype = "solid",
                                                                                                      se = F,
                                                                                                      size = 1.1
-                                                                                                   ) + theme(strip.text = element_text(size = 12))  + theme(strip.text = element_text(size = 12)) + scale_x_continuous(
+                                                                                                   ) + theme(strip.text = element_text(size = 12))  + theme(strip.text = element_text(size = 12)) + scale_x_continuous(breaks = seq(0, max(hei$POS, na.rm = TRUE), by = 5000000),
                                                                                                      labels = function(x)
                                                                                                        x / 1000000
                                                                                                    ) + coord_cartesian(clip = "off")
 
+library(ggpubr)
+FIG2 <- ggarrange(
+  toplot, treeALL, heights2,
+  ncol = 1,
+  heights = c(5, 8, 14), labels = c("A", "B", "C")
+)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-FIG2<- (toplot/treeALL/heights) +
-  plot_layout(heights  = c(1,8,15))
-
-
-tiff(filename = "Fig3filter.tiff",width = 7.2,height = 10.9, res=300, units = "in") ###Figure 3
+tiff(filename = "Fig3filterFixed.tiff",width = 7.2,height = 10.7, res=300, units = "in") ###Figure 3
 plot(FIG2)
 dev.off()
 
@@ -567,9 +602,52 @@ FIG4<- (corOGpl +  corINTpl2 + plot_layout(guides = 'collect')  & theme(legend.p
 
 
 
-tiff(filename = "Fig4.2.tiff",width = 12.2,height = 6, res=300, units = "in") # Figure 5
+tiff(filename = "Fig4.2.tiff",width = 12.2,height = 6, res=300, units = "in") # Figure 6
 plot(FIG4)
 dev.off()
+
+
+library(ape)
+
+### Mantel to see if association of OG corrations (1-cor)
+#and phylogenetic distances are significant
+
+phylo_dist <- cophenetic(TREESP)
+species <- intersect(rownames(corOG), rownames(phylo_dist))
+corOG <- corOG[species, species]
+phylo_dist <- phylo_dist[species, species]
+corOG_dist <- 1 - corOG
+
+
+mantel.test(corOG_dist, phylo_dist, nperm = 999)
+#$z.stat
+#[1] 6.025307
+#
+#$p
+#[1] 0.003
+#
+#$alternative
+#[1] "two.sided"
+
+###ok now for the gene structures:
+corBIN2 <- cor(intrBIN2)
+colnames(corBIN2) <- gsub("_intr", "", colnames(corBIN2))
+rownames(corBIN2) <- gsub("_intr", "", rownames(corBIN2))
+corBIN2 <- corBIN2[species, species]
+corBIN_dist <- 1 - corBIN2
+
+
+
+mantel.test(corBIN_dist, phylo_dist, nperm = 999)
+#$z.stat
+#[1] 6.834696
+#
+#$p
+#[1] 0.005
+
+#$alternative
+#[1] "two.sided"
+
 
 
 
@@ -1255,7 +1333,7 @@ calculate_nonzero_cramer <- function(col1, col2) {
     return(result)
   } else {
     result <- list(cramer = NA, pval = NA)
-    return(result)  # Return NA if there are no common non-zero values
+    return(result)
   }
 }
 
@@ -1792,9 +1870,20 @@ sd(intronnum1to1[intronnum1to1$Reproduction=="Outcrossing",]$value)
 
 
 
+
 ##############################################
 ################## Fig8 ######################
 ##############################################
+intstrALL<- read.csv("7sp_all_intron_info_ALL.FIN.tab",header=F,sep="\t")
+#"Cbren" "Cbrig" "Celeg" "Cinop" "Cnigo" "Crema" "Ctrop"
+
+prefixes <- c("Cbren", "Cbrig", "Celeg", "Cinop", "Cnigo", "Crema", "Ctrop")
+suffixes <- c("intr", "size", "phase", "ss")
+
+
+new_column_names <- c(paste0(rep(prefixes, each = length(suffixes)), "_", rep(suffixes, times = length(prefixes))),"Orthogroup")
+
+colnames(intstrALL) <- new_column_names
 
 
 intrPHASE <- as.matrix(intstrALL[, grep("_phase", names(intstrALL))])
@@ -1802,8 +1891,14 @@ intrPHASE <- as.matrix(intstrALL[, grep("_phase", names(intstrALL))])
 
 #intrones_PHASE <-as.data.frame(intrones_PHASE)
 #and intrones_SS
+intrones_PHASE <- as.matrix(intstrALL[, grep("_phase", names(intstrALL))])
+intrones_PHASE <-as.data.frame(intrones_PHASE)
 
+intrones_SS <- as.matrix(intstrALL[, grep("_ss", names(intstrALL))])
+intrones_SS <- as.data.frame(intrones_SS)
 
+library(dplyr)
+library(tidyr)
 #remove singletons
 intrPHASECOM<-intrones_PHASE[which(rowSums(intrones_PHASE != "0") > 1),]
 intrPHASEUNI<-intrones_PHASE[which(rowSums(intrones_PHASE != "0") == 1),]
@@ -1963,7 +2058,7 @@ intrPHASECOMBOP2[intrPHASECOMBOP2$Type=="Unique",]$padj <- NA
 
 phaseper2 <- ggplot(intrPHASECOMBOP2, aes(x = percentage, y=Type, ordered = FALSE, fill=Class)) + theme_bw(base_size = 10) + labs(
   title = "A",
-  x = "%",
+  x = "Intron phases (%)",
   y = "") + theme(
     axis.text.x = element_text(
       angle = 0,
@@ -1979,16 +2074,16 @@ phaseper2 <- ggplot(intrPHASECOMBOP2, aes(x = percentage, y=Type, ordered = FALS
   )  + geom_bar(stat = "identity", position = "stack") +  scale_fill_manual(values = c("#3f918a","#ff7f00","grey20"), name="") +  theme(strip.text = element_text(size = 10))  + theme(strip.text = element_text(size = 10), panel.border = element_blank(), axis.line = element_line(colour = "grey40")) +
   facet_grid( column ~ .) +
   theme(strip.text.y = element_text(face = "italic",angle = 0,hjust=0)) +
-  geom_text(data=intrPHASECOMBOP2[intrPHASECOMBOP2$Type == "Common",],aes(x = 54, label = ifelse(padj < 0.05, "]","")),  vjust = -0.1,  # Adjust the position between bars
-                                                                                    hjust = -0.40,
-                                                                                    size = 6,
-                                                                                    color = "grey25") +
+  geom_text(data=intrPHASECOMBOP2[intrPHASECOMBOP2$Type == "Common",],aes(x = 54, label = ifelse(padj < 0.05, "]","")),  vjust = -0.1,
+            hjust = -0.40,
+            size = 6,
+            color = "grey25") +
   geom_text(
     aes(x = 57, label = ifelse(padj < 0.0001, "***",
                                ifelse(padj < 0.001, "**",
                                       ifelse(padj < 0.01, "*",
                                              ifelse(padj < 0.05, ".", ""))))),
-    vjust = 0.1,  # Adjust the position between bars
+    vjust = 0.1,
     hjust = 0,
     size = 4,
     color = "grey25"
@@ -2041,7 +2136,7 @@ intrSSCOMBOP2[intrSSCOMBOP2$Type=="Unique",]$padj <- NA
 
 ssper2 <-   ggplot(intrSSCOMBOP2[intrSSCOMBOP2$Class !="GT-AG",], aes(x = percentage, y=Type, ordered = FALSE, fill=Class)) + theme_bw(base_size = 10) + labs(
   title = "B",
-  x = "%",
+  x = "Non-GT-AG splice sites (%)",
   y = "") + theme(
     axis.text.x = element_text(
       angle = 0,
@@ -2057,16 +2152,16 @@ ssper2 <-   ggplot(intrSSCOMBOP2[intrSSCOMBOP2$Class !="GT-AG",], aes(x = percen
   )  + geom_bar(stat = "identity", position = "stack") +  scale_fill_manual(values = c("#3f918a","#ff7f00","grey95"), name="") +  theme(strip.text = element_text(size = 10))  + theme(strip.text = element_text(size = 10), panel.border = element_blank(), axis.line = element_line(colour = "grey40")) +
   facet_grid( column ~ .) +
   theme(strip.text.y = element_text(face = "italic",angle = 0,hjust=0)) +
-  geom_text(data=intrSSCOMBOP2[intrSSCOMBOP2$Type == "Common" & intrSSCOMBOP2$Class !="GT-AG",],aes(x = 5.6, label = ifelse(padj < 0.05, "]","")),  vjust = -0.1,  # Adjust the position between bars
+  geom_text(data=intrSSCOMBOP2[intrSSCOMBOP2$Type == "Common" & intrSSCOMBOP2$Class !="GT-AG",],aes(x = 5.6, label = ifelse(padj < 0.05, "]","")),  vjust = -0.1,
             hjust = -0.40,
             size = 6,
             color = "grey25") +
   geom_text(
     aes(x = 5.6, label = ifelse(padj < 0.0001, "***",
-                               ifelse(padj < 0.001, "**",
-                                      ifelse(padj < 0.01, "*",
-                                             ifelse(padj < 0.05, ".", ""))))),
-    vjust = 0.1,  # Adjust the position between bars
+                                ifelse(padj < 0.001, "**",
+                                       ifelse(padj < 0.01, "*",
+                                              ifelse(padj < 0.05, ".", ""))))),
+    vjust = 0.1,
     hjust = -0.5,
     size = 4,
     color = "grey25"
@@ -2074,10 +2169,9 @@ ssper2 <-   ggplot(intrSSCOMBOP2[intrSSCOMBOP2$Class !="GT-AG",], aes(x = percen
 
 
 FIG6.2 <- phaseper2 + ssper2
-tiff(filename = "Fig6.2.tiff",width = 10.4,height = 4.2, res=300, units = "in")  ###Figure 8
+tiff(filename = "Fig6.2.fixed.tiff",width = 10.4,height = 4.2, res=300, units = "in")  ###Figure 8
 plot(FIG6.2)
 dev.off()
-
 
 
 ##############################################
@@ -2459,19 +2553,18 @@ xgb_model <- xgb.train(
 train_log <- xgb_model$evaluation_log$train_logloss
 valid_log <- xgb_model$evaluation_log$valid_logloss
 
-# Convert the logs to data frames
 train_log_df <- as.data.frame(train_log)
 valid_log_df <- as.data.frame(valid_log)
 colnames(train_log_df) <- "logloss"
 colnames(valid_log_df) <- "logloss"
 
-# Combine the logs
+
 combined_log_df <- rbind(
   transform(train_log_df, set = "train"),
   transform(valid_log_df, set = "valid")
 )
 combined_log_df$iter <- rep(c(1:100),2)
-# Plot both training and validation loss over iterations
+
 ggplot(combined_log_df, aes(x = iter, y = logloss, color = set)) +
   geom_line() +
   labs(title = "XGBoost Training and Validation Progress",
@@ -2523,7 +2616,7 @@ roc2 <- pROC::roc(CnigoCbrig$ratio_Ne_str, xgb_pred3,plot=FALSE,
                   legacy.axes=TRUE, percent=FALSE)
 
 
-# compute recall and precision at each ROC curve's threshold
+# lets compute recall and precision at each ROC curve's threshold
 prcoords <- pROC::coords(roc1, "all", ret = c("threshold", "recall", "precision","sensitivity", "specificity"), transpose = FALSE)
 prcoords2 <- pROC::coords(roc2, "all", ret = c("threshold", "recall", "precision","sensitivity", "specificity"), transpose = FALSE)
 
